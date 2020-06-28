@@ -33,7 +33,7 @@ router.post("/company", function (req, res, next) {
       var result = {};
       if (err) {
         result.Message = "Record Not Inserted";
-        result.Data = err;
+        result.Data = [];
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
@@ -68,7 +68,7 @@ router.post("/subcomapny", function (req, res, next) {
       var result = {};
       if (err) {
         result.Message = "Record Not Inserted";
-        result.Data = err;
+        result.Data = [];
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
@@ -170,7 +170,7 @@ router.post("/login", function (req, res, next) {
       var result = {};
       if (err) {
         result.Message = "Employee Not Found";
-        result.Data = err;
+        result.Data = [];
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
@@ -202,7 +202,7 @@ router.post("/attendance", upload.single("attendance"), async function (
       var result = {};
       if (err) {
         result.Message = "Attendance Not Marked";
-        result.Data = err;
+        result.Data = [];
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
@@ -226,7 +226,7 @@ router.post("/attendance", upload.single("attendance"), async function (
         var result = {};
         if (err) {
           result.Message = "Attendance Not Marked";
-          result.Data = err;
+          result.Data = [];
           result.isSuccess = false;
         } else {
           if (record.length == 0) {
