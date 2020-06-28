@@ -86,7 +86,7 @@ router.post("/subcomapny", function (req, res, next) {
   }
 });
 
-router.post("/employee", function (req, res, next) {
+router.post("/employee", async function (req, res, next) {
   if (req.body.type == "insert") {
     var record = new employeeSchema({
       FirstName: req.body.firstname,
@@ -133,24 +133,18 @@ router.post("/employee", function (req, res, next) {
       res.json(result);
     });
   } else if (req.body.type == "getdata") {
-    employeeSchema.find({}, function (err, record) {
-      var result = {};
-      if (err) {
-        result.Message = "Employee Not Found";
-        result.Data = err;
-        result.isSuccess = false;
-      } else {
-        if (record.length == 0) {
-          result.Message = "Employee Not Found";
-          result.Data = [];
-          result.isSuccess = false;
-        } else {
-          result.Message = "Employee Found";
-          result.Data = record;
-          result.isSuccess = true;
-        }
-      }
-    });
+    var record = await employeeSchema.find({}).populate("SubCompany");
+    var result = {};
+    if (record.length == 0) {
+      result.Message = "Employee Not Found";
+      result.Data = [];
+      result.isSuccess = false;
+    } else {
+      result.Message = "Employee Found";
+      result.Data = record;
+      result.isSuccess = true;
+    }
+    res.json(result);
   }
 });
 
