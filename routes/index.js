@@ -173,7 +173,7 @@ router.post("/login", function (req, res, next) {
   }
 });
 
-router.post("/attendance", upload.single("attendance"), function (
+router.post("/attendance", upload.single("attendance"), async function (
   req,
   res,
   next
@@ -227,6 +227,19 @@ router.post("/attendance", upload.single("attendance"), function (
         res.json(result);
       }
     );
+  } else if (req.body.type == "getdata") {
+    var record = await attendeanceSchema.find({}).populate("EmployeeId");
+    var result = {};
+    if (record.length == 0) {
+      result.Message = "Attendance Not Found";
+      result.Data = [];
+      result.isSuccess = false;
+    } else {
+      result.Message = "Attendance Found";
+      result.Data = record;
+      result.isSuccess = true;
+    }
+    res.json(result);
   }
 });
 module.exports = router;
