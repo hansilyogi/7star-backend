@@ -8,7 +8,7 @@ var newSchema = mongoose.Schema({
   Gender: String,
   DOB: String,
   MartialStatus: String,
-  Mobile: Number,
+  Mobile: String,
   MailId: String,
   JoinDate: String,
   ConfirmationDate: String,

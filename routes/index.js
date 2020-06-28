@@ -137,6 +137,7 @@ router.post("/employee", function (req, res, next) {
 
 router.post("/login", function (req, res, next) {
   if (req.body.type == "login") {
+    console.log(req.body.number);
     employeeSchema.find({ Mobile: req.body.number }, function (err, record) {
       var result = {};
       if (err) {
