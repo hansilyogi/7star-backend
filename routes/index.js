@@ -211,7 +211,7 @@ router.post("/attendance", upload.single("attendance"), async function (
           result.isSuccess = false;
         } else {
           result.Message = "Attendance Marked";
-          result.Data = record;
+          result.Data = [record];
           result.isSuccess = true;
         }
       }
@@ -235,7 +235,7 @@ router.post("/attendance", upload.single("attendance"), async function (
             result.isSuccess = false;
           } else {
             result.Message = "Attendance Marked";
-            result.Data = record;
+            result.Data = [record];
             result.isSuccess = true;
           }
         }
