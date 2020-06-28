@@ -145,6 +145,21 @@ router.post("/employee", async function (req, res, next) {
       result.isSuccess = true;
     }
     res.json(result);
+  } else if (req.body.type == "getsingledata") {
+    var record = await employeeSchema
+      .find({ _id: req.body.id })
+      .populate("SubCompany");
+    var result = {};
+    if (record.length == 0) {
+      result.Message = "Employee Not Found";
+      result.Data = [];
+      result.isSuccess = false;
+    } else {
+      result.Message = "Employee Found";
+      result.Data = record;
+      result.isSuccess = true;
+    }
+    res.json(result);
   }
 });
 
