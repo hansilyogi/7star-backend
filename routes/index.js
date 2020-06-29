@@ -32,7 +32,6 @@ router.post("/company", function (req, res, next) {
       GSTIN: req.body.gstin,
     });
     record.save({}, function (err, record) {
-      console.log(err);
       var result = {};
       if (err) {
         result.Message = "Record Not Inserted";
@@ -52,7 +51,7 @@ router.post("/company", function (req, res, next) {
       res.json(result);
     });
   } else if (req.body.type == "getdata") {
-    companySchema.find({}, (err, res) => {
+    companySchema.find({}, (err, record) => {
       var result = {};
       if (err) {
         result.Message = "Company Not Found";
@@ -69,6 +68,7 @@ router.post("/company", function (req, res, next) {
           result.isSuccess = true;
         }
       }
+      res.json(result);
     });
   }
 });
