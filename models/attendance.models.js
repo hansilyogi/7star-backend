@@ -1,8 +1,4 @@
 var mongoose = require("mongoose");
-const moment = require("moment-timezone");
-
-const dateINDIA = moment.tz(Date.now(), "Asia/Calcutta");
-console.log(dateINDIA);
 
 var newSchema = mongoose.Schema({
   EmployeeId: {
@@ -10,15 +6,10 @@ var newSchema = mongoose.Schema({
     ref: "employee",
     required: true,
   },
-  StartDate: {
+  Date: {
     type: Date,
-    default: dateINDIA,
   },
   Image: String,
-  EndDate: {
-    type: Date,
-    default: dateINDIA,
-  },
   Status: String,
 });
 

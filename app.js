@@ -7,10 +7,8 @@ var mongoose = require("mongoose");
 var cors = require("cors");
 require("dotenv").config();
 
-/*mongodb+srv://root:admin@cluster0-nkxlm.mongodb.net/cluster0?retryWrites=true&w=majority*/
-
 var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+/*var usersRouter = require("./routes/users");*/
 
 var app = express();
 

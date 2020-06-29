@@ -197,8 +197,13 @@ router.post("/attendance", upload.single("attendance"), async function (
     var record = attendeanceSchema({
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
+      Date: Date.now(),
     });
     record.save({}, function (err, record) {
+      // console
+      //   .log(moment(record.StartDate))
+      //   .utcoffset("+0530")
+      //   .format("YYYY-MM-DD HH:mm");
       var result = {};
       if (err) {
         result.Message = "Attendance Not Marked";
@@ -219,29 +224,30 @@ router.post("/attendance", upload.single("attendance"), async function (
     });
   } else if (req.body.type == "out") {
     console.log(req.body.employeeid);
-    attendeanceSchema.findOneAndUpdate(
-      { EmployeeId: req.body.employeeid, Status: "in" },
-      { $set: { EndDate: dateINDIA, Status: "out" } },
-      function (err, record) {
-        var result = {};
-        if (err) {
+    var record = attendeanceSchema({
+      EmployeeId: req.body.employeeid,
+      Status: req.body.type,
+      Date: Date.now(),
+    });
+    record.save({}, function (err, record) {
+      var result = {};
+      if (err) {
+        result.Message = "Attendance Not Marked";
+        result.Data = [];
+        result.isSuccess = false;
+      } else {
+        if (record.length == 0) {
           result.Message = "Attendance Not Marked";
           result.Data = [];
           result.isSuccess = false;
         } else {
-          if (record.length == 0) {
-            result.Message = "Attendance Not Marked";
-            result.Data = [];
-            result.isSuccess = false;
-          } else {
-            result.Message = "Attendance Marked";
-            result.Data = [record];
-            result.isSuccess = true;
-          }
+          result.Message = "Attendance Marked";
+          result.Data = [record];
+          result.isSuccess = true;
         }
-        res.json(result);
       }
-    );
+      res.json(result);
+    });
   } else if (req.body.type == "getdata") {
     var record = await attendeanceSchema.find({}).populate("EmployeeId");
     var result = {};
