@@ -105,6 +105,29 @@ router.post("/subcomapny", function (req, res, next) {
       }
       res.json(result);
     });
+  } else if (req.body.type == "getdata") {
+    subcompanySchema
+      .find()
+      .populate("CompanyId")
+      .then((err, record) => {
+        var result = {};
+        if (err) {
+          result.Message = "SubCompany Not Found";
+          result.Data = err;
+          result.isSuccess = false;
+        } else {
+          if (record.length == 0) {
+            result.Message = "SubCompany Not Found";
+            result.Data = [];
+            result.isSuccess = false;
+          } else {
+            result.Message = "SubCompany Inserted";
+            result.Data = record;
+            result.isSuccess = true;
+          }
+        }
+        res.json(result);
+      });
   }
 });
 
