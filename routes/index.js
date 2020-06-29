@@ -163,13 +163,12 @@ router.post("/employee", async function (req, res, next) {
   } else if (req.body.type == "getsubcompany") {
     subcompanySchema.find({}, function (err, record) {
       var result = {};
-      var result = {};
       if (record.length == 0) {
-        result.Message = "Employee Not Found";
+        result.Message = "Sub Company Not Found";
         result.Data = [];
         result.isSuccess = false;
       } else {
-        result.Message = "Employee Found";
+        result.Message = "Sub Company Found";
         result.Data = record;
         result.isSuccess = true;
       }
@@ -209,10 +208,13 @@ router.post("/attendance", upload.single("attendance"), async function (
   next
 ) {
   if (req.body.type == "in") {
+    let date = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Calcutta",
+    });
     var record = attendeanceSchema({
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
-      Date: Date.now(),
+      Date: date,
     });
     record.save({}, function (err, record) {
       // console
@@ -276,5 +278,12 @@ router.post("/attendance", upload.single("attendance"), async function (
     }
     res.json(result);
   }
+});
+
+router.post("/sample", (req, res, next) => {
+  let date = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Calcutta",
+  });
+  res.json(date);
 });
 module.exports = router;
