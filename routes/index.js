@@ -6,7 +6,7 @@ var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
-var storage = multer.diskStorage({
+var attendImg = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "public/images/attendance");
   },
@@ -19,7 +19,7 @@ var storage = multer.diskStorage({
   },
 });
 
-var upload = multer({ storage: storage });
+var upload = multer({ storage: attendImg });
 
 router.post("/company", function (req, res, next) {
   if (req.body.type == "insert") {
