@@ -1,11 +1,11 @@
 var express = require("express");
 var router = express.Router();
+var path = require("path");
 const multer = require("multer");
 var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
-const moment = require("moment-timezone");
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "public/images/attendance");
@@ -218,7 +218,7 @@ router.post("/attendance", upload.single("attendance"), async function (
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
       Date: date,
-      Image: req.file.destination + req.file.filename,
+      Image: req.file.filename,
     });
     record.save({}, function (err, record) {
       var result = {};
@@ -283,8 +283,9 @@ router.post("/attendance", upload.single("attendance"), async function (
   }
 });
 
-router.post("/sample", upload.single("attendance"), (req, res, next) => {
-  console.log(req.file);
+router.get("/attendance-1593419022313-131770730.png", (req, res) => {
+  console.log(__dirname);
+  res.sendFile(path.join(__dirname, "./images/attendance"));
 });
 
 module.exports = router;
