@@ -34,16 +34,16 @@ router.post("/company", function (req, res, next) {
     record.save({}, function (err, record) {
       var result = {};
       if (err) {
-        result.Message = "Record Not Inserted";
+        result.Message = "Company Not Inserted";
         result.Data = [];
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
-          result.Message = "Record Not Inserted";
+          result.Message = "Company Not Inserted";
           result.Data = [];
           result.isSuccess = false;
         } else {
-          result.Message = "Record Inserted";
+          result.Message = "New Company Inserted";
           result.Data = record;
           result.isSuccess = true;
         }
