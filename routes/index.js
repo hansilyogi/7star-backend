@@ -73,7 +73,7 @@ router.post("/company", function (req, res, next) {
   }
 });
 
-router.post("/subcomapny", function (req, res, next) {
+router.post("/subcompany", function (req, res, next) {
   if (req.body.type == "insert") {
     var record = new subcompanySchema({
       Name: req.body.name,
