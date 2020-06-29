@@ -6,13 +6,16 @@ var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
 const moment = require("moment-timezone");
-const dateINDIA = moment.tz(Date.now(), "Asia/Calcutta");
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "public/images/attendance");
   },
   filename: function (req, file, cb) {
-    cb(null, file.fieldname + "Attendance" + "." + file.mimetype.split("/")[1]);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + "." + file.mimetype.split("/")[1]
+    );
   },
 });
 
@@ -215,12 +218,9 @@ router.post("/attendance", upload.single("attendance"), async function (
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
       Date: date,
+      Image: req.file.destination + req.file.filename,
     });
     record.save({}, function (err, record) {
-      // console
-      //   .log(moment(record.StartDate))
-      //   .utcoffset("+0530")
-      //   .format("YYYY-MM-DD HH:mm");
       var result = {};
       if (err) {
         result.Message = "Attendance Not Marked";
@@ -281,6 +281,10 @@ router.post("/attendance", upload.single("attendance"), async function (
     }
     res.json(result);
   }
+});
+
+router.post("/sample", upload.single("attendance"), (req, res, next) => {
+  console.log(req.file);
 });
 
 module.exports = router;
