@@ -160,6 +160,21 @@ router.post("/employee", async function (req, res, next) {
       result.isSuccess = true;
     }
     res.json(result);
+  } else if (req.body.type == "getsubcompany") {
+    subcompanySchema.find({}, function (err, record) {
+      var result = {};
+      var result = {};
+      if (record.length == 0) {
+        result.Message = "Employee Not Found";
+        result.Data = [];
+        result.isSuccess = false;
+      } else {
+        result.Message = "Employee Found";
+        result.Data = record;
+        result.isSuccess = true;
+      }
+      res.json(result);
+    });
   }
 });
 
@@ -223,7 +238,6 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "out") {
-    console.log(req.body.employeeid);
     var record = attendeanceSchema({
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
