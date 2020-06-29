@@ -140,6 +140,7 @@ router.post("/subcompany", function (req, res, next) {
           result.isSuccess = true;
         }
       }
+      res.json(result);
     });
   }
 });
