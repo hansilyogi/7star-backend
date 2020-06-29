@@ -240,10 +240,13 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "out") {
+    let date = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Calcutta",
+    });
     var record = attendeanceSchema({
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
-      Date: Date.now(),
+      Date: date,
     });
     record.save({}, function (err, record) {
       var result = {};
@@ -280,10 +283,4 @@ router.post("/attendance", upload.single("attendance"), async function (
   }
 });
 
-router.post("/sample", (req, res, next) => {
-  let date = new Date().toLocaleString("en-US", {
-    timeZone: "Asia/Calcutta",
-  });
-  res.json(date);
-});
 module.exports = router;

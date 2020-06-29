@@ -9,7 +9,7 @@ var newSchema = mongoose.Schema({
   DOB: String,
   MartialStatus: String,
   Mobile: String,
-  MailId: String,
+  Mail: String,
   JoinDate: String,
   ConfirmationDate: String,
   TerminationDate: String,
