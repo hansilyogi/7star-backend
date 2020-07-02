@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 var path = require("path");
 const multer = require("multer");
+var firebase = require("firebase-admin");
 var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
@@ -339,9 +340,12 @@ router.post("/attendance", upload.single("attendance"), async function (
   }
 });
 
-router.get("/attendance-1593419022313-131770730.png", (req, res) => {
-  console.log(__dirname);
-  res.sendFile(path.join(__dirname, "./images/attendance"));
+router.post("/location", async (req, res) => {
+  var dbRef = firebase.database().ref("Database");
+  const data = await dbRef.once("value", function (snapshot) {
+    return snapshot.val();
+  });
+  res.json(data);
 });
 
 module.exports = router;

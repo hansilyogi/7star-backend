@@ -7,6 +7,8 @@ var logger = require("morgan");
 var mongoose = require("mongoose");
 var cors = require("cors");
 require("dotenv").config();
+var firebase = require("firebase-admin");
+var serviceAccount = require("./firebasekey.json");
 
 var indexRouter = require("./routes/index");
 /*var usersRouter = require("./routes/users");*/
@@ -17,6 +19,11 @@ mongoose.connect(process.env.MONGO, {
   useFindAndModify: false,
   useNewUrlParser: true,
   useUnifiedTopology: true,
+});
+
+firebase.initializeApp({
+  credential: firebase.credential.cert(serviceAccount),
+  databaseURL: process.env.FIREBASE,
 });
 
 // view engine setup
