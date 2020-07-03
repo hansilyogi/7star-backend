@@ -378,28 +378,20 @@ router.post("/attendance", upload.single("attendance"), async function (
     }
     res.json(result);
   } else if (req.body.type == "getsingle") {
-    attendeanceSchema.find(
-      { EmployeeId: req.body.EmployeeId },
-      (err, record) => {
-        var result = {};
-        if (err) {
-          result.Message = "Employee Not Found";
-          result.Data = [];
-          result.isSuccess = false;
-        } else {
-          if (record.length == 0) {
-            result.Message = "Employee Not Found";
-            result.Data = [];
-            result.isSuccess = false;
-          } else {
-            result.Message = "Employee Found";
-            result.Data = record;
-            result.isSuccess = true;
-          }
-        }
-        res.json(result);
-      }
-    );
+    var record = await attendeanceSchema
+      .find({ EmployeeId: req.body.EmployeeId })
+      .populate("EmployeeId");
+    var result = {};
+    if (record.length == 0) {
+      result.Message = "Employee Not Found";
+      result.Data = [];
+      result.isSuccess = false;
+    } else {
+      result.Message = "Employee Found";
+      result.Data = record;
+      result.isSuccess = true;
+    }
+    res.json(result);
   }
 });
 
