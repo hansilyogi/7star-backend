@@ -143,6 +143,26 @@ router.post("/subcompany", function (req, res, next) {
       }
       res.json(result);
     });
+  } else if (req.body.type == "getsinglecompany") {
+    subcompanySchema.find({ CompanyId: req.body.CompanyId }, (err, recor) => {
+      var result = {};
+      if (err) {
+        result.Message = "SubCompany Not Found";
+        result.Data = err;
+        result.isSuccess = false;
+      } else {
+        if (record.length == 0) {
+          result.Message = "SubCompany Not Found";
+          result.Data = [];
+          result.isSuccess = false;
+        } else {
+          result.Message = "SubCompany Found";
+          result.Data = record;
+          result.isSuccess = true;
+        }
+      }
+      res.json(result);
+    });
   }
 });
 
