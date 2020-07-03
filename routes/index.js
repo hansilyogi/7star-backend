@@ -144,7 +144,7 @@ router.post("/subcompany", function (req, res, next) {
       res.json(result);
     });
   } else if (req.body.type == "getsinglecompany") {
-    subcompanySchema.find({ CompanyId: req.body.CompanyId }, (err, recor) => {
+    subcompanySchema.find({ CompanyId: req.body.CompanyId }, (err, record) => {
       var result = {};
       if (err) {
         result.Message = "SubCompany Not Found";
