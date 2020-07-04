@@ -331,7 +331,7 @@ router.post("/attendance", upload.single("attendance"), async function (
       var result = {};
       if (err) {
         result.Message = "Attendance Not Marked";
-        result.Data = [];
+        result.Data = err;
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
