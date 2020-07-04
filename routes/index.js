@@ -311,12 +311,22 @@ router.post("/attendance", upload.single("attendance"), async function (
     let date = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Calcutta",
     });
-    var record = attendeanceSchema({
-      EmployeeId: req.body.employeeid,
-      Status: req.body.type,
-      Date: date,
-      Image: req.file.filename,
-    });
+    //console.log(date);
+    console.log(date);
+    if (req.body.filename == undefined) {
+      var record = attendeanceSchema({
+        EmployeeId: req.body.employeeid,
+        Status: req.body.type,
+        Date: date,
+      });
+    } else {
+      var record = attendeanceSchema({
+        EmployeeId: req.body.employeeid,
+        Status: req.body.type,
+        Date: date,
+        Image: req.file.filename,
+      });
+    }
     record.save({}, function (err, record) {
       var result = {};
       if (err) {
@@ -403,4 +413,30 @@ router.post("/location", async (req, res) => {
   res.json(data);
 });
 
+router.post("/testing", async (req, res) => {
+  var data = await attendeanceSchema
+    .find({
+      Odate: {
+        $gte: "1/4/2020",
+        $lt: "31/4/2020",
+      },
+    })
+    .populate({
+      path: "EmployeeId",
+      populate: {
+        path: "SubCompany",
+        populate: { path: "CompanyId", model: companySchema },
+      },
+    });
+  res.json(data);
+});
+
 module.exports = router;
+
+// .find().populate([
+//   {
+//     path: "EmployeeId",
+//     populate: { path: "SubCompany" },
+//     populate: { path: "CompanyId", model: companySchema },
+//   },
+// ]);
