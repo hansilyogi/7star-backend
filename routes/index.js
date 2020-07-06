@@ -308,6 +308,35 @@ router.post("/attendance", upload.single("attendance"), async function (
   next
 ) {
   if (req.body.type == "in") {
+    var longlat = await employeeSchema
+      .find({ _id: req.body.employeeid })
+      .populate("SubCompany");
+    lon1 = req.body.longitude;
+    lon2 = longlat[0]["SubCompany"].long;
+    lat1 = req.body.latitude;
+    lat2 = longlat[0]["SubCompany"].lat;
+    unit = "K";
+    var radlat1 = (Math.PI * lat1) / 180;
+    var radlat2 = (Math.PI * lat2) / 180;
+    var theta = lon1 - lon2;
+    var radtheta = (Math.PI * theta) / 180;
+    var dist =
+      Math.sin(radlat1) * Math.sin(radlat2) +
+      Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+    if (dist > 1) {
+      dist = 1;
+    }
+    dist = Math.acos(dist);
+    dist = (dist * 180) / Math.PI;
+    dist = dist * 60 * 1.1515;
+    if (unit == "K") {
+      dist = dist * 1.609344;
+    }
+    if (unit == "N") {
+      dist = dist * 0.8684;
+    }
+    var fd = dist * 1000;
+    var area = fd > 100 ? "Outside Area" : "Inside Area";
     let date = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Calcutta",
     });
@@ -318,6 +347,7 @@ router.post("/attendance", upload.single("attendance"), async function (
         EmployeeId: req.body.employeeid,
         Status: req.body.type,
         Date: date,
+        Area: area,
       });
     } else {
       var record = attendeanceSchema({
@@ -325,13 +355,14 @@ router.post("/attendance", upload.single("attendance"), async function (
         Status: req.body.type,
         Date: date,
         Image: req.file.filename,
+        Area: area,
       });
     }
     record.save({}, function (err, record) {
       var result = {};
       if (err) {
         result.Message = "Attendance Not Marked";
-        result.Data = err;
+        result.Data = [];
         result.isSuccess = false;
       } else {
         if (record.length == 0) {
@@ -414,29 +445,18 @@ router.post("/location", async (req, res) => {
 });
 
 router.post("/testing", async (req, res) => {
-  var data = await attendeanceSchema
-    .find({
-      Odate: {
-        $gte: "1/4/2020",
-        $lt: "31/4/2020",
-      },
-    })
-    .populate({
-      path: "EmployeeId",
+  var data = await attendeanceSchema.find().populate({
+    path: "EmployeeId",
+    populate: {
+      path: "SubCompany",
       populate: {
-        path: "SubCompany",
-        populate: { path: "CompanyId", model: companySchema },
+        path: "CompanyId",
+        model: companySchema,
+        match: { CompanyId: "5ef77f1f2160c400240c4fab" },
       },
-    });
+    },
+  });
   res.json(data);
 });
 
 module.exports = router;
-
-// .find().populate([
-//   {
-//     path: "EmployeeId",
-//     populate: { path: "SubCompany" },
-//     populate: { path: "CompanyId", model: companySchema },
-//   },
-// ]);

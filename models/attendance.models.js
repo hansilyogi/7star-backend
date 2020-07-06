@@ -6,12 +6,13 @@ var newSchema = mongoose.Schema({
     ref: "employee",
     required: true,
   },
-  Odate: Date,
+  Odate: String,
   Date: {
     type: Date,
   },
   Image: String,
   Status: String,
+  Area: String,
 });
 
 const admin = mongoose.model("attendance", newSchema);
