@@ -166,6 +166,26 @@ router.post("/subcompany", function (req, res, next) {
       }
       res.json(result);
     });
+  } else if (req.bidy.type == "getsubcompanydetail") {
+    subcompanySchema.find({ _id: req.body.id }, (err, record) => {
+      var result = {};
+      if (err) {
+        result.Message = "SubCompany Not Found";
+        result.Data = err;
+        result.isSuccess = false;
+      } else {
+        if (record.length == 0) {
+          result.Message = "SubCompany Not Found";
+          result.Data = [];
+          result.isSuccess = false;
+        } else {
+          result.Message = "SubCompany Found";
+          result.Data = record;
+          result.isSuccess = true;
+        }
+      }
+      res.json(result);
+    });
   }
 });
 
