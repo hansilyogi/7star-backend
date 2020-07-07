@@ -531,7 +531,7 @@ router.post("/timing", (req, res) => {
       StartTime: req.body.st,
       EndTime: req.body.et,
     });
-    record.save({}, (req, res) => {
+    record.save({}, (err, record) => {
       var result = {};
       if (err) {
         result.Message = "Timing Not Inserted";
