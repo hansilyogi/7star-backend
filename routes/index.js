@@ -429,9 +429,19 @@ router.post("/attendance", upload.single("attendance"), async function (
     }
     res.json(result);
   } else if (req.body.type == "getsingle") {
-    var record = await attendeanceSchema
-      .find({ EmployeeId: req.body.EmployeeId })
-      .populate("EmployeeId");
+    if (req.body.afilter == 0) {
+      var record = await attendeanceSchema
+        .find({ EmployeeId: req.body.EmployeeId })
+        .populate("EmployeeId");
+    } else if (req.body.afilter == 1) {
+      var record = await attendeanceSchema
+        .find({ EmployeeId: req.body.EmployeeId, Area: "Inside Area" })
+        .populate("EmployeeId");
+    } else {
+      var record = await attendeanceSchema
+        .find({ EmployeeId: req.body.EmployeeId, Area: "Outside Area" })
+        .populate("EmployeeId");
+    }
     var result = {};
     if (record.length == 0) {
       result.Message = "Employee Not Found";
