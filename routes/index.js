@@ -349,7 +349,7 @@ router.post("/employee", async function (req, res, next) {
     }
     res.json(result);
   } else if (req.body.type == "update") {
-    employeeSchema.findByIdAndDelete(
+    employeeSchema.findByIdAndUpdate(
       req.body.id,
       {
         FirstName: req.body.firstname,
