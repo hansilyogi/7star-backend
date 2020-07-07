@@ -406,7 +406,17 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "getdata") {
-    var record = await attendeanceSchema.find({}).populate("EmployeeId");
+    if (req.body.afilter == 0) {
+      var record = await attendeanceSchema.find({}).populate("EmployeeId");
+    } else if (req.body.afilter == 0) {
+      var record = await attendeanceSchema
+        .find({ Area: "Inside Area" })
+        .populate("EmployeeId");
+    } else {
+      var record = await attendeanceSchema
+        .find({ Area: "Outside Area" })
+        .populate("EmployeeId");
+    }
     var result = {};
     if (record.length == 0) {
       result.Message = "Attendance Not Found";
