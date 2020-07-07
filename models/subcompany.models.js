@@ -15,6 +15,7 @@ var newSchema = mongoose.Schema({
   },
   lat: Number,
   long: Number,
+  Link: String,
 });
 
 const admin = mongoose.model("subcompany", newSchema);
