@@ -186,6 +186,42 @@ router.post("/subcompany", function (req, res, next) {
       }
       res.json(result);
     });
+  } else if (req.body.type == "update") {
+    subcompanySchema.findByIdAndUpdate(
+      req.body.id,
+      {
+        Name: req.body.name,
+        Address: req.body.address,
+        ContactPersonName: req.body.contactpersonname,
+        ContactPersonNumber: req.body.contactpersonnumber,
+        Email: req.body.email,
+        GSTIN: req.body.gstin,
+        Status: "Active",
+        CompanyId: req.body.companyid,
+        lat: req.body.lat,
+        long: req.body.long,
+        Link: req.body.googlelink,
+      },
+      (err, record) => {
+        var result = {};
+        if (err) {
+          result.Message = "SubCompany Not Found";
+          result.Data = err;
+          result.isSuccess = false;
+        } else {
+          if (record.length == 0) {
+            result.Message = "SubCompany Not Found";
+            result.Data = [];
+            result.isSuccess = false;
+          } else {
+            result.Message = "SubCompany Found";
+            result.Data = record;
+            result.isSuccess = true;
+          }
+        }
+        res.json(result);
+      }
+    );
   }
 });
 
