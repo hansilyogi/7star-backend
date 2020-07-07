@@ -592,7 +592,7 @@ router.post("/timing", (req, res) => {
     });
   } else if (req.body.type == "update") {
     timingSchema.findByIdAndUpdate(
-      req.bodyid,
+      req.body.id,
       { Name: req.body.name, StartTime: req.body.st, EndTime: req.body.et },
       (err, record) => {
         var result = {};
