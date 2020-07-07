@@ -166,7 +166,7 @@ router.post("/subcompany", function (req, res, next) {
       }
       res.json(result);
     });
-  } else if (req.bidy.type == "getsubcompanydetail") {
+  } else if (req.body.type == "getsubcompanydetail") {
     subcompanySchema.find({ _id: req.body.id }, (err, record) => {
       var result = {};
       if (err) {
