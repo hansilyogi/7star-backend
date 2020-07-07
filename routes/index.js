@@ -252,6 +252,7 @@ router.post("/employee", async function (req, res, next) {
       Department: req.body.department,
       Designation: req.body.designation,
       SubCompany: req.body.subcompany,
+      Timing: req.body.timing,
     });
     record.save({}, function (err, record) {
       var result = {};
@@ -597,16 +598,16 @@ router.post("/timing", (req, res) => {
       (err, record) => {
         var result = {};
         if (err) {
-          result.Message = "Timing Not Inserted";
+          result.Message = "Timing Not Updated";
           result.Data = [];
           result.isSuccess = false;
         } else {
           if (record.length == 0) {
-            result.Message = "Timing Not Inserted";
+            result.Message = "Timing Not Updated";
             result.Data = [];
             result.isSuccess = false;
           } else {
-            result.Message = "New Timing Inserted";
+            result.Message = "Timing Updated";
             result.Data = record;
             result.isSuccess = true;
           }
