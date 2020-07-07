@@ -408,7 +408,7 @@ router.post("/attendance", upload.single("attendance"), async function (
   } else if (req.body.type == "getdata") {
     if (req.body.afilter == 0) {
       var record = await attendeanceSchema.find({}).populate("EmployeeId");
-    } else if (req.body.afilter == 0) {
+    } else if (req.body.afilter == 1) {
       var record = await attendeanceSchema
         .find({ Area: "Inside Area" })
         .populate("EmployeeId");
