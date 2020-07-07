@@ -7,6 +7,7 @@ var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
+var timingSchema = require("../models/timing.models");
 var attendImg = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads");
@@ -523,19 +524,48 @@ router.post("/location", async (req, res) => {
   res.json(data);
 });
 
-router.post("/testing", async (req, res) => {
-  var data = await attendeanceSchema.find().populate({
-    path: "EmployeeId",
-    populate: {
-      path: "SubCompany",
-      populate: {
-        path: "CompanyId",
-        model: companySchema,
-        match: { CompanyId: "5ef77f1f2160c400240c4fab" },
-      },
-    },
-  });
-  res.json(data);
+router.post("/timing", (req, res) => {
+  if (req.body.type == "insert") {
+    var record = timingSchema({
+      Name: req.body.name,
+      StartTime: req.body.st,
+      EndTime: req.body.et,
+    });
+    record.save({}, (req, res) => {
+      var result = {};
+      if (err) {
+        result.Message = "Timing Not Inserted";
+        result.Data = [];
+        result.isSuccess = false;
+      } else {
+        if (record.length == 0) {
+          result.Message = "Timing Not Inserted";
+          result.Data = [];
+          result.isSuccess = false;
+        } else {
+          result.Message = "New Timing Inserted";
+          result.Data = record;
+          result.isSuccess = true;
+        }
+      }
+      res.json(result);
+    });
+  }
 });
 
 module.exports = router;
+
+// router.post("/testing", async (req, res) => {
+//   var data = await attendeanceSchema.find().populate({
+//     path: "EmployeeId",
+//     populate: {
+//       path: "SubCompany",
+//       populate: {
+//         path: "CompanyId",
+//         model: companySchema,
+//         match: { CompanyId: "5ef77f1f2160c400240c4fab" },
+//       },
+//     },
+//   });
+//   res.json(data);
+// });
