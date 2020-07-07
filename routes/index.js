@@ -348,6 +348,55 @@ router.post("/employee", async function (req, res, next) {
       result.isSuccess = true;
     }
     res.json(result);
+  } else if (req.body.type == "update") {
+    employeeSchema.findByIdAndDelete(
+      req.body.id,
+      {
+        FirstName: req.body.firstname,
+        MiddleName: req.body.middlename,
+        LastName: req.body.lastname,
+        Name:
+          req.body.firstname +
+          " " +
+          req.body.middlename +
+          " " +
+          req.body.lastname,
+        Gender: req.body.gender,
+        DOB: req.body.dob,
+        MartialStatus: req.body.martialstatus,
+        Mobile: req.body.mobile,
+        Mail: req.body.mail,
+        JoinDate: req.body.joindate,
+        ConfirmationDate: req.body.confirmationdate,
+        TerminationDate: req.body.terminationdate,
+        Prohibition: req.body.prohibition,
+        Idtype: req.body.idtype,
+        IDNumber: req.body.idnumber,
+        Department: req.body.department,
+        Designation: req.body.designation,
+        SubCompany: req.body.subcompany,
+        Timing: req.body.timing,
+      },
+      (err, record) => {
+        var result = {};
+        if (err) {
+          result.Message = "SubCompany Not Updated";
+          result.Data = err;
+          result.isSuccess = false;
+        } else {
+          if (record.length == 0) {
+            result.Message = "SubCompany Not Updated";
+            result.Data = [];
+            result.isSuccess = false;
+          } else {
+            result.Message = "SubCompany Updated";
+            result.Data = record;
+            result.isSuccess = true;
+          }
+        }
+        res.json(result);
+      }
+    );
   }
 });
 
