@@ -483,14 +483,14 @@ router.post("/attendance", upload.single("attendance"), async function (
 ) {
   moment.locale("en-in");
   var date = moment()
-    .tz("Asia/Calcutta|Asia/Kolkata")
+    .tz("Asia/Calcutta")
     .format("DD MM YYYY, h:mm:ss a")
     .split(",")[0];
   var time = moment()
-    .tz("Asia/Calcutta|Asia/Kolkata")
+    .tz("Asia/Calcutta")
     .format("DD MM YYYY, h:mm:ss a")
     .split(",")[1];
-  var day = moment().tz("Asia/Calcutta|Asia/Kolkata").format("dddd");
+  var day = moment().tz("Asia/Calcutta").format("dddd");
   if (req.body.type == "in") {
     var longlat = await employeeSchema
       .find({ _id: req.body.employeeid })
