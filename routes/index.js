@@ -72,7 +72,7 @@ router.post("/company", function (req, res, next) {
       }
       res.json(result);
     });
-  } else if (req.body.type == "getcomapny") {
+  } else if (req.body.type == "getcompany") {
     companySchema.find({ _id: req.body.id }, (err, record) => {
       var result = {};
       if (err) {
@@ -90,8 +90,8 @@ router.post("/company", function (req, res, next) {
           result.isSuccess = true;
         }
       }
+      res.json(result);
     });
-    res.json(result);
   }
 });
 
