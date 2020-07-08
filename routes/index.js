@@ -72,6 +72,25 @@ router.post("/company", function (req, res, next) {
       }
       res.json(result);
     });
+  } else if (req.body.type == "getcomapny") {
+    companySchema.find({ _id: req.body.id }, (err, record) => {
+      var results = {};
+      if (err) {
+        result.Message = "Company Not Found";
+        result.Data = [];
+        result.isSuccess = false;
+      } else {
+        if (record.length == 0) {
+          result.Message = "Company Not Found";
+          result.Data = [];
+          result.isSuccess = false;
+        } else {
+          result.Message = "Company Found";
+          result.Data = results;
+          result.isSuccess = true;
+        }
+      }
+    });
   }
 });
 
