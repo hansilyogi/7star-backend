@@ -741,8 +741,7 @@ router.post("/timing", (req, res) => {
   }
 });
 
-// router.post("/testing", async (req, res) => {
-//   console.log(date);
-//   console.log(time);
-//   });
+router.post("/testing", async (req, res) => {
+  res.json(moment.tz("Asia/Calcutta|Asia/Kolkata").format());
+});
 module.exports = router;
