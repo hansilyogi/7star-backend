@@ -489,32 +489,34 @@ router.post("/attendance", upload.single("attendance"), async function (
     var longlat = await employeeSchema
       .find({ _id: req.body.employeeid })
       .populate("SubCompany");
-    lon1 = req.body.longitude;
-    lon2 = longlat[0]["SubCompany"].long;
-    lat1 = req.body.latitude;
-    lat2 = longlat[0]["SubCompany"].lat;
-    unit = "K";
-    var radlat1 = (Math.PI * lat1) / 180;
-    var radlat2 = (Math.PI * lat2) / 180;
-    var theta = lon1 - lon2;
-    var radtheta = (Math.PI * theta) / 180;
-    var dist =
-      Math.sin(radlat1) * Math.sin(radlat2) +
-      Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-    if (dist > 1) {
-      dist = 1;
+    if (longlat[0]["SubCompany"].long != "") {
+      lon1 = req.body.longitude;
+      lon2 = longlat[0]["SubCompany"].long;
+      lat1 = req.body.latitude;
+      lat2 = longlat[0]["SubCompany"].lat;
+      unit = "K";
+      var radlat1 = (Math.PI * lat1) / 180;
+      var radlat2 = (Math.PI * lat2) / 180;
+      var theta = lon1 - lon2;
+      var radtheta = (Math.PI * theta) / 180;
+      var dist =
+        Math.sin(radlat1) * Math.sin(radlat2) +
+        Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+      if (dist > 1) {
+        dist = 1;
+      }
+      dist = Math.acos(dist);
+      dist = (dist * 180) / Math.PI;
+      dist = dist * 60 * 1.1515;
+      if (unit == "K") {
+        dist = dist * 1.609344;
+      }
+      if (unit == "N") {
+        dist = dist * 0.8684;
+      }
+      var fd = dist * 1000;
+      var area = fd > 100 ? "Outside Area" : "Inside Area";
     }
-    dist = Math.acos(dist);
-    dist = (dist * 180) / Math.PI;
-    dist = dist * 60 * 1.1515;
-    if (unit == "K") {
-      dist = dist * 1.609344;
-    }
-    if (unit == "N") {
-      dist = dist * 0.8684;
-    }
-    var fd = dist * 1000;
-    var area = fd > 100 ? "Outside Area" : "Inside Area";
     if (req.body.filename == undefined) {
       var record = attendeanceSchema({
         EmployeeId: req.body.employeeid,
