@@ -6,10 +6,9 @@ var newSchema = mongoose.Schema({
     ref: "employee",
     required: true,
   },
-  Odate: String,
-  Date: {
-    type: Date,
-  },
+  Day: String,
+  Time: String,
+  Date: String,
   Image: String,
   Status: String,
   Area: String,

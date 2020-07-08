@@ -3,6 +3,7 @@ var router = express.Router();
 var path = require("path");
 const multer = require("multer");
 var firebase = require("firebase-admin");
+var moment = require("moment");
 var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
@@ -453,7 +454,6 @@ router.post("/employee", async function (req, res, next) {
 
 router.post("/login", function (req, res, next) {
   if (req.body.type == "login") {
-    console.log(req.body.number);
     employeeSchema.find({ Mobile: req.body.number }, function (err, record) {
       var result = {};
       if (err) {
@@ -481,6 +481,10 @@ router.post("/attendance", upload.single("attendance"), async function (
   res,
   next
 ) {
+  moment.locale("en-in");
+  var date = moment().format("DD MM YYYY, h:mm:ss a").split(",")[0];
+  var time = moment().format("DD MM YYYY, h:mm:ss a").split(",")[1];
+  var day = moment().format("dddd");
   if (req.body.type == "in") {
     var longlat = await employeeSchema
       .find({ _id: req.body.employeeid })
@@ -511,16 +515,13 @@ router.post("/attendance", upload.single("attendance"), async function (
     }
     var fd = dist * 1000;
     var area = fd > 100 ? "Outside Area" : "Inside Area";
-    let date = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Calcutta",
-    });
-    //console.log(date);
-    console.log(date);
     if (req.body.filename == undefined) {
       var record = attendeanceSchema({
         EmployeeId: req.body.employeeid,
         Status: req.body.type,
         Date: date,
+        Time: time,
+        Day: day,
         Area: area,
       });
     } else {
@@ -528,6 +529,8 @@ router.post("/attendance", upload.single("attendance"), async function (
         EmployeeId: req.body.employeeid,
         Status: req.body.type,
         Date: date,
+        Time: time,
+        Day: day,
         Image: req.file.filename,
         Area: area,
       });
@@ -552,13 +555,12 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "out") {
-    let date = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Calcutta",
-    });
     var record = attendeanceSchema({
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
       Date: date,
+      Time: time,
+      Day: day,
     });
     record.save({}, function (err, record) {
       var result = {};
@@ -731,19 +733,8 @@ router.post("/timing", (req, res) => {
   }
 });
 
-module.exports = router;
-
 // router.post("/testing", async (req, res) => {
-//   var data = await attendeanceSchema.find().populate({
-//     path: "EmployeeId",
-//     populate: {
-//       path: "SubCompany",
-//       populate: {
-//         path: "CompanyId",
-//         model: companySchema,
-//         match: { CompanyId: "5ef77f1f2160c400240c4fab" },
-//       },
-//     },
+//   console.log(date);
+//   console.log(time);
 //   });
-//   res.json(data);
-// });
+module.exports = router;
