@@ -86,11 +86,12 @@ router.post("/company", function (req, res, next) {
           result.isSuccess = false;
         } else {
           result.Message = "Company Found";
-          result.Data = results;
+          result.Data = record;
           result.isSuccess = true;
         }
       }
     });
+    res.json(result);
   }
 });
 
