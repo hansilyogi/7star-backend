@@ -3,7 +3,7 @@ var router = express.Router();
 var path = require("path");
 const multer = require("multer");
 var firebase = require("firebase-admin");
-var moment = require("moment");
+var moment = require("moment-timezone");
 var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
@@ -482,9 +482,15 @@ router.post("/attendance", upload.single("attendance"), async function (
   next
 ) {
   moment.locale("en-in");
-  var date = moment().format("DD MM YYYY, h:mm:ss a").split(",")[0];
-  var time = moment().format("DD MM YYYY, h:mm:ss a").split(",")[1];
-  var day = moment().format("dddd");
+  var date = moment()
+    .tz("Asia/Calcutta|Asia/Kolkata")
+    .format("DD MM YYYY, h:mm:ss a")
+    .split(",")[0];
+  var time = moment()
+    .tz("Asia/Calcutta|Asia/Kolkata")
+    .format("DD MM YYYY, h:mm:ss a")
+    .split(",")[1];
+  var day = moment().tz("Asia/Calcutta|Asia/Kolkata").format("dddd");
   if (req.body.type == "in") {
     var longlat = await employeeSchema
       .find({ _id: req.body.employeeid })
