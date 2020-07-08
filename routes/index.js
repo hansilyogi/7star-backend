@@ -74,7 +74,7 @@ router.post("/company", function (req, res, next) {
     });
   } else if (req.body.type == "getcomapny") {
     companySchema.find({ _id: req.body.id }, (err, record) => {
-      var results = {};
+      var result = {};
       if (err) {
         result.Message = "Company Not Found";
         result.Data = [];
