@@ -742,6 +742,8 @@ router.post("/timing", (req, res) => {
 });
 
 router.post("/testing", async (req, res) => {
-  res.json(moment.tz("Asia/Calcutta").format());
+  res.json(
+    moment().tz("Asia/Calcutta").format("DD MM YYYY, h:mm:ss a").split(",")[1]
+  );
 });
 module.exports = router;
