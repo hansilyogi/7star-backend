@@ -92,6 +92,37 @@ router.post("/company", function (req, res, next) {
       }
       res.json(result);
     });
+  } else if (req.body.type == "update") {
+    companySchema.findByIdAndUpdate(
+      req.body.id,
+      {
+        Name: req.body.name,
+        Address: req.body.address,
+        ContactPersonName: req.body.contactpersonname,
+        ContactPersonNumber: req.body.contactpersonnumber,
+        Email: req.body.email,
+        GSTIN: req.body.gstin,
+      },
+      (err, record) => {
+        var result = {};
+        if (err) {
+          result.Message = "Company Not Updated";
+          result.Data = err;
+          result.isSuccess = false;
+        } else {
+          if (record.length == 0) {
+            result.Message = "Company Not Updated";
+            result.Data = [];
+            result.isSuccess = false;
+          } else {
+            result.Message = "Company Updated";
+            result.Data = record;
+            result.isSuccess = true;
+          }
+        }
+        res.json(result);
+      }
+    );
   }
 });
 
