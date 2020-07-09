@@ -603,11 +603,23 @@ router.post("/attendance", upload.single("attendance"), async function (
         .populate("EmployeeId");
     } else if (req.body.afilter == 1) {
       var record = await attendeanceSchema
-        .find({ Area: "Inside Area" })
+        .find({
+          Area: "Inside Area",
+          Date: {
+            $gte: req.body.sd,
+            $lte: req.body.ed,
+          },
+        })
         .populate("EmployeeId");
     } else {
       var record = await attendeanceSchema
-        .find({ Area: "Outside Area" })
+        .find({
+          Area: "Outside Area",
+          Date: {
+            $gte: req.body.sd,
+            $lte: req.body.ed,
+          },
+        })
         .populate("EmployeeId");
     }
     var result = {};
