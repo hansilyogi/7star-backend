@@ -592,35 +592,39 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "getdata") {
-    if (req.body.afilter == 0) {
-      var record = await attendeanceSchema
-        .find({
-          Date: {
-            $gte: req.body.sd,
-            $lte: req.body.ed,
-          },
-        })
-        .populate("EmployeeId");
-    } else if (req.body.afilter == 1) {
-      var record = await attendeanceSchema
-        .find({
-          Area: "Inside Area",
-          Date: {
-            $gte: req.body.sd,
-            $lte: req.body.ed,
-          },
-        })
-        .populate("EmployeeId");
+    if (req.body.rm == 0) {
+      if (req.body.afilter == 0) {
+        var record = await attendeanceSchema
+          .find({
+            Date: {
+              $gte: req.body.sd,
+              $lte: req.body.ed,
+            },
+          })
+          .populate("EmployeeId");
+      } else if (req.body.afilter == 1) {
+        var record = await attendeanceSchema
+          .find({
+            Area: "Inside Area",
+            Date: {
+              $gte: req.body.sd,
+              $lte: req.body.ed,
+            },
+          })
+          .populate("EmployeeId");
+      } else {
+        var record = await attendeanceSchema
+          .find({
+            Area: "Outside Area",
+            Date: {
+              $gte: req.body.sd,
+              $lte: req.body.ed,
+            },
+          })
+          .populate("EmployeeId");
+      }
     } else {
-      var record = await attendeanceSchema
-        .find({
-          Area: "Outside Area",
-          Date: {
-            $gte: req.body.sd,
-            $lte: req.body.ed,
-          },
-        })
-        .populate("EmployeeId");
+      var record = await attendeanceSchema({}).populate("EmployeeId");
     }
     var result = {};
     if (record.length == 0) {
