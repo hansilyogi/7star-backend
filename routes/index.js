@@ -593,34 +593,31 @@ router.post("/attendance", upload.single("attendance"), async function (
     });
   } else if (req.body.type == "getdata") {
     const day = req.body.day;
-    const sdate = req.body.sd;
-    const edate = req.body.ed;
+    const sdate = req.body.sd == "" ? undefined : req.body.sd;
+    const edate = req.body.ed == "" ? undefined : req.body.ed;
     const area = req.body.area;
-    let dayquery = {};
-    let datequery = {};
-    let areaquery = {};
+    var Area;
+    let query = {};
     if (day) {
-      dayquery.Day = day;
+      query.Day = day;
     }
     if (sdate != undefined || edate != undefined) {
-      datequery.Date = {
-        $gte: req.body.sdate,
-        $lte: req.body.edate,
+      query.Date = {
+        $gte: sdate,
+        $lte: edate,
       };
     }
     if (area) {
       if (area == 0) {
-        areaquery = {};
+        query.Area = {};
       } else if (area == 1) {
-        areaquery.Area = "Inside Area";
+        query.Area = "Inside Area";
       } else {
-        areaquery.Area = "Outside Area";
+        query.Area = "Outside Area";
       }
     }
     if (req.body.rm == 0) {
-      var record = await attendeanceSchema
-        .find(dayquery, datequery, areaquery)
-        .populate("EmployeeId");
+      var record = await attendeanceSchema.find(query).populate("EmployeeId");
     } else {
       var record = await attendeanceSchema.find({}).populate("EmployeeId");
     }
@@ -764,5 +761,11 @@ router.post("/timing", (req, res) => {
   }
 });
 
-router.post("/testing", async (req, res) => {});
+router.post("/testing", async (req, res) => {
+  result = await attendeanceSchema.find({
+    Day: "Thursday",
+    Date: { $gte: "09/07/2020", $lte: "09/07/2020" },
+  });
+  res.json(result);
+});
 module.exports = router;
