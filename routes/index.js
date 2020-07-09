@@ -595,13 +595,10 @@ router.post("/attendance", upload.single("attendance"), async function (
     const day = req.body.day;
     const sdate = req.body.sd == "" ? undefined : req.body.sd;
     const edate = req.body.ed == "" ? undefined : req.body.ed;
-    const area = req.body.area;
-    var Area;
+    const area = req.body.afilter;
     let query = {};
     if (day) {
-      if (day == "All") {
-        query.Day = {};
-      } else {
+      if (day != "All") {
         query.Day = day;
       }
     }
@@ -613,13 +610,13 @@ router.post("/attendance", upload.single("attendance"), async function (
     }
     if (area) {
       if (area == 0) {
-        query.Area = {};
       } else if (area == 1) {
         query.Area = "Inside Area";
       } else {
         query.Area = "Outside Area";
       }
     }
+    console.log(query);
     if (req.body.rm == 0) {
       var record = await attendeanceSchema.find(query).populate("EmployeeId");
     } else {
