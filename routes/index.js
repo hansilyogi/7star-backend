@@ -599,7 +599,11 @@ router.post("/attendance", upload.single("attendance"), async function (
     var Area;
     let query = {};
     if (day) {
-      query.Day = day;
+      if (day == "All") {
+        query.Day = {};
+      } else {
+        query.Day = day;
+      }
     }
     if (sdate != undefined || edate != undefined) {
       query.Date = {
