@@ -598,10 +598,8 @@ router.post("/attendance", upload.single("attendance"), async function (
     const edate = req.body.ed == "" ? undefined : req.body.ed;
     const area = req.body.afilter;
     const status = req.body.status;
-    let query;
+    let query = {};
     if (req.body.rm == 0) {
-      query = {};
-    } else {
       if (day) {
         if (day != "All") {
           query.Day = day;
@@ -630,6 +628,7 @@ router.post("/attendance", upload.single("attendance"), async function (
         }
       }
     }
+    console.log(query);
     var record = await attendeanceSchema.find(query).populate("EmployeeId");
     var result = {};
     if (record.length == 0) {
