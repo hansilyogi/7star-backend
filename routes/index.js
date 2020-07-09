@@ -593,7 +593,14 @@ router.post("/attendance", upload.single("attendance"), async function (
     });
   } else if (req.body.type == "getdata") {
     if (req.body.afilter == 0) {
-      var record = await attendeanceSchema.find({}).populate("EmployeeId");
+      var record = await attendeanceSchema
+        .find({
+          Date: {
+            $gte: req.body.sd,
+            $lte: req.body.ed,
+          },
+        })
+        .populate("EmployeeId");
     } else if (req.body.afilter == 1) {
       var record = await attendeanceSchema
         .find({ Area: "Inside Area" })
