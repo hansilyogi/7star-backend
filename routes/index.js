@@ -9,6 +9,7 @@ var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
 var timingSchema = require("../models/timing.models");
+const { stat } = require("fs");
 var attendImg = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads");
@@ -596,6 +597,7 @@ router.post("/attendance", upload.single("attendance"), async function (
     const sdate = req.body.sd == "" ? undefined : req.body.sd;
     const edate = req.body.ed == "" ? undefined : req.body.ed;
     const area = req.body.afilter;
+    const status = req.body.status;
     let query = {};
     if (day) {
       if (day != "All") {
@@ -614,6 +616,14 @@ router.post("/attendance", upload.single("attendance"), async function (
         query.Area = "Inside Area";
       } else {
         query.Area = "Outside Area";
+      }
+    }
+    if (status) {
+      if (status == 0) {
+      } else if (status == 1) {
+        query.Status = "in";
+      } else if (status == 2) {
+        query.Status = "out";
       }
     }
     console.log(query);
