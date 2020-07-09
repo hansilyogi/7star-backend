@@ -624,7 +624,7 @@ router.post("/attendance", upload.single("attendance"), async function (
           .populate("EmployeeId");
       }
     } else {
-      var record = await attendeanceSchema({}).populate("EmployeeId");
+      var record = await attendeanceSchema.find({}).populate("EmployeeId");
     }
     var result = {};
     if (record.length == 0) {
