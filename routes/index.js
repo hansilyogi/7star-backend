@@ -600,6 +600,7 @@ router.post("/attendance", upload.single("attendance"), async function (
               $gte: req.body.sd,
               $lte: req.body.ed,
             },
+            Day: req.body.day,
           })
           .populate("EmployeeId");
       } else if (req.body.afilter == 1) {
@@ -610,6 +611,7 @@ router.post("/attendance", upload.single("attendance"), async function (
               $gte: req.body.sd,
               $lte: req.body.ed,
             },
+            Day: req.body.day,
           })
           .populate("EmployeeId");
       } else {
@@ -620,6 +622,7 @@ router.post("/attendance", upload.single("attendance"), async function (
               $gte: req.body.sd,
               $lte: req.body.ed,
             },
+            Day: req.body.day,
           })
           .populate("EmployeeId");
       }
