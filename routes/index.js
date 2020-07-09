@@ -598,40 +598,39 @@ router.post("/attendance", upload.single("attendance"), async function (
     const edate = req.body.ed == "" ? undefined : req.body.ed;
     const area = req.body.afilter;
     const status = req.body.status;
-    let query = {};
-    if (day) {
-      if (day != "All") {
-        query.Day = day;
-      }
-    }
-    if (sdate != undefined || edate != undefined) {
-      query.Date = {
-        $gte: sdate,
-        $lte: edate,
-      };
-    }
-    if (area) {
-      if (area == 0) {
-      } else if (area == 1) {
-        query.Area = "Inside Area";
-      } else {
-        query.Area = "Outside Area";
-      }
-    }
-    if (status) {
-      if (status == 0) {
-      } else if (status == 1) {
-        query.Status = "in";
-      } else if (status == 2) {
-        query.Status = "out";
-      }
-    }
-    console.log(query);
+    let query;
     if (req.body.rm == 0) {
-      var record = await attendeanceSchema.find(query).populate("EmployeeId");
+      query = {};
     } else {
-      var record = await attendeanceSchema.find({}).populate("EmployeeId");
+      if (day) {
+        if (day != "All") {
+          query.Day = day;
+        }
+      }
+      if (sdate != undefined || edate != undefined) {
+        query.Date = {
+          $gte: sdate,
+          $lte: edate,
+        };
+      }
+      if (area) {
+        if (area == 0) {
+        } else if (area == 1) {
+          query.Area = "Inside Area";
+        } else {
+          query.Area = "Outside Area";
+        }
+      }
+      if (status) {
+        if (status == 0) {
+        } else if (status == 1) {
+          query.Status = "in";
+        } else if (status == 2) {
+          query.Status = "out";
+        }
+      }
     }
+    var record = await attendeanceSchema.find(query).populate("EmployeeId");
     var result = {};
     if (record.length == 0) {
       result.Message = "Attendance Not Found";
