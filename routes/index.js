@@ -486,6 +486,8 @@ router.post("/attendance", upload.single("attendance"), async function (
     .tz("Asia/Calcutta")
     .format("DD MM YYYY, h:mm:ss a")
     .split(",")[0];
+  date = date.split(" ");
+  date = date[0] + "/" + date[1] + "/" + date[2];
   var time = moment()
     .tz("Asia/Calcutta")
     .format("DD MM YYYY, h:mm:ss a")
