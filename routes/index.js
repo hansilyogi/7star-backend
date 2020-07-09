@@ -592,40 +592,35 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "getdata") {
-    if (req.body.rm == 0) {
-      if (req.body.afilter == 0) {
-        var record = await attendeanceSchema
-          .find({
-            Date: {
-              $gte: req.body.sd,
-              $lte: req.body.ed,
-            },
-            Day: req.body.day,
-          })
-          .populate("EmployeeId");
-      } else if (req.body.afilter == 1) {
-        var record = await attendeanceSchema
-          .find({
-            Area: "Inside Area",
-            Date: {
-              $gte: req.body.sd,
-              $lte: req.body.ed,
-            },
-            Day: req.body.day,
-          })
-          .populate("EmployeeId");
+    const day = req.body.day;
+    const sdate = req.body.sd;
+    const edate = req.body.ed;
+    const area = req.body.area;
+    let dayquery = {};
+    let datequery = {};
+    let areaquery = {};
+    if (day) {
+      dayquery.Day = day;
+    }
+    if (sdate != undefined || edate != undefined) {
+      datequery.Date = {
+        $gte: req.body.sdate,
+        $lte: req.body.edate,
+      };
+    }
+    if (area) {
+      if (area == 0) {
+        areaquery = {};
+      } else if (area == 1) {
+        areaquery.Area = "Inside Area";
       } else {
-        var record = await attendeanceSchema
-          .find({
-            Area: "Outside Area",
-            Date: {
-              $gte: req.body.sd,
-              $lte: req.body.ed,
-            },
-            Day: req.body.day,
-          })
-          .populate("EmployeeId");
+        areaquery.Area = "Outside Area";
       }
+    }
+    if (req.body.rm == 0) {
+      var record = await attendeanceSchema
+        .find(dayquery, datequery, areaquery)
+        .populate("EmployeeId");
     } else {
       var record = await attendeanceSchema.find({}).populate("EmployeeId");
     }
@@ -769,9 +764,5 @@ router.post("/timing", (req, res) => {
   }
 });
 
-router.post("/testing", async (req, res) => {
-  res.json(
-    moment().tz("Asia/Calcutta").format("DD MM YYYY, h:mm:ss a").split(",")[1]
-  );
-});
+router.post("/testing", async (req, res) => {});
 module.exports = router;
