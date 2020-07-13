@@ -827,4 +827,3 @@ router.post("/testing", async (req, res) => {
   console.log("http://www.google.com/maps/place/" + long + "," + lat);
 });
 module.exports = router;
-s
