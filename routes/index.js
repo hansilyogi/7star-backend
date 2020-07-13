@@ -15,10 +15,15 @@ var attendImg = multer.diskStorage({
     cb(null, "uploads");
   },
   filename: function (req, file, cb) {
+    console.log(file);
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(
       null,
-      file.fieldname + "-" + uniqueSuffix + "." + file.mimetype.split("/")[1]
+      file.fieldname +
+        "-" +
+        uniqueSuffix +
+        "." +
+        file.originalname.split(".")[1]
     );
   },
 });
@@ -477,12 +482,31 @@ router.post("/login", function (req, res, next) {
   }
 });
 
-router.post("/attendance", upload.single("attendance"), async function (
-  req,
-  res,
-  next
-) {
+function calculatedistance(plon1, plon2, plat1, plat2) {
+  lon1 = plon1;
+  lon2 = plon2;
+  lat1 = plat1;
+  lat2 = plat2;
+  var radlat1 = (Math.PI * lat1) / 180;
+  var radlat2 = (Math.PI * lat2) / 180;
+  var theta = lon1 - lon2;
+  var radtheta = (Math.PI * theta) / 180;
+  var dist =
+    Math.sin(radlat1) * Math.sin(radlat2) +
+    Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+  if (dist > 1) {
+    dist = 1;
+  }
+  dist = Math.acos(dist);
+  dist = (dist * 180) / Math.PI;
+  dist = dist * 60 * 1.1515;
+  dist = dist * 1.609344;
+  return dist;
+}
+
+function getdate() {
   moment.locale("en-in");
+  var attendance = {};
   var date = moment()
     .tz("Asia/Calcutta")
     .format("DD MM YYYY, h:mm:ss a")
@@ -494,58 +518,46 @@ router.post("/attendance", upload.single("attendance"), async function (
     .format("DD MM YYYY, h:mm:ss a")
     .split(",")[1];
   var day = moment().tz("Asia/Calcutta").format("dddd");
+  attendance.date = date;
+  attendance.time = time;
+  attendance.day = day;
+  return attendance;
+}
+
+router.post("/attendance", upload.single("attendance"), async function (
+  req,
+  res,
+  next
+) {
+  period = getdate();
   if (req.body.type == "in") {
     var longlat = await employeeSchema
       .find({ _id: req.body.employeeid })
       .populate("SubCompany");
-    if (longlat[0]["SubCompany"].long != "") {
-      lon1 = req.body.longitude;
-      lon2 = longlat[0]["SubCompany"].long;
-      lat1 = req.body.latitude;
-      lat2 = longlat[0]["SubCompany"].lat;
-      unit = "K";
-      var radlat1 = (Math.PI * lat1) / 180;
-      var radlat2 = (Math.PI * lat2) / 180;
-      var theta = lon1 - lon2;
-      var radtheta = (Math.PI * theta) / 180;
-      var dist =
-        Math.sin(radlat1) * Math.sin(radlat2) +
-        Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-      if (dist > 1) {
-        dist = 1;
-      }
-      dist = Math.acos(dist);
-      dist = (dist * 180) / Math.PI;
-      dist = dist * 60 * 1.1515;
-      if (unit == "K") {
-        dist = dist * 1.609344;
-      }
-      if (unit == "N") {
-        dist = dist * 0.8684;
-      }
-      var fd = dist * 1000;
-      var area = fd > 100 ? "Outside Area" : "Inside Area";
-    }
-    if (req.body.filename == undefined) {
-      var record = attendeanceSchema({
-        EmployeeId: req.body.employeeid,
-        Status: req.body.type,
-        Date: date,
-        Time: time,
-        Day: day,
-        Area: area,
-      });
-    } else {
-      var record = attendeanceSchema({
-        EmployeeId: req.body.employeeid,
-        Status: req.body.type,
-        Date: date,
-        Time: time,
-        Day: day,
-        Image: req.file.filename,
-        Area: area,
-      });
-    }
+    dist = calculatedistance(
+      req.body.longitude,
+      longlat[0]["SubCompany"].lat,
+      req.body.latitude,
+      longlat[0]["SubCompany"].long
+    );
+    var NAME = longlat[0]["SubCompany"].Name;
+    var fd = dist * 1000;
+    var area =
+      fd > 100
+        ? "http://www.google.com/maps/place/" +
+          req.body.latitude +
+          "," +
+          req.body.longitude
+        : NAME;
+    var record = attendeanceSchema({
+      EmployeeId: req.body.employeeid,
+      Status: req.body.type,
+      Date: period.date,
+      Time: period.time,
+      Day: period.day,
+      Image: req.file.filename,
+      Area: area,
+    });
     record.save({}, function (err, record) {
       var result = {};
       if (err) {
@@ -566,12 +578,32 @@ router.post("/attendance", upload.single("attendance"), async function (
       res.json(result);
     });
   } else if (req.body.type == "out") {
+    var longlat = await employeeSchema
+      .find({ _id: req.body.employeeid })
+      .populate("SubCompany");
+    dist = calculatedistance(
+      req.body.longitude,
+      longlat[0]["SubCompany"].lat,
+      req.body.latitude,
+      longlat[0]["SubCompany"].long
+    );
+    var NAME = longlat[0]["SubCompany"].Name;
+    var fd = dist * 1000;
+    var area =
+      fd > 100
+        ? "http://www.google.com/maps/place/" +
+          req.body.latitude +
+          "," +
+          req.body.longitude
+        : NAME;
     var record = attendeanceSchema({
       EmployeeId: req.body.employeeid,
       Status: req.body.type,
-      Date: date,
-      Time: time,
-      Day: day,
+      Date: period.date,
+      Time: period.time,
+      Day: period.day,
+      Image: req.file.filename,
+      Area: area,
     });
     record.save({}, function (err, record) {
       var result = {};
@@ -613,10 +645,10 @@ router.post("/attendance", upload.single("attendance"), async function (
       }
       if (area) {
         if (area == 0) {
-        } else if (area == 1) {
-          query.Area = "Inside Area";
+        } else if (area == 2) {
+          query.Area = { $regex: "http://www.google.com/maps/place/" };
         } else {
-          query.Area = "Outside Area";
+          query.Area = area;
         }
       }
       if (status) {
@@ -628,7 +660,6 @@ router.post("/attendance", upload.single("attendance"), async function (
         }
       }
     }
-    console.log(query);
     var record = await attendeanceSchema.find(query).populate("EmployeeId");
     var result = {};
     if (record.length == 0) {
@@ -666,6 +697,26 @@ router.post("/attendance", upload.single("attendance"), async function (
       result.isSuccess = true;
     }
     res.json(result);
+  } else if (req.body.type == "getareafilter") {
+    subcompanySchema.find({}, (err, record) => {
+      var result = {};
+      if (err) {
+        result.Message = "SubComapny Not Found";
+        result.Data = [];
+        result.isSuccess = false;
+      } else {
+        if (record.length == 0) {
+          result.Message = "SubComapny Not Found";
+          result.Data = [];
+          result.isSuccess = false;
+        } else {
+          result.Message = "SubComapny Found";
+          result.Data = record;
+          result.isSuccess = true;
+        }
+      }
+      res.json(result);
+    });
   }
 });
 
@@ -771,10 +822,9 @@ router.post("/timing", (req, res) => {
 });
 
 router.post("/testing", async (req, res) => {
-  result = await attendeanceSchema.find({
-    Day: "Thursday",
-    Date: { $gte: "09/07/2020", $lte: "09/07/2020" },
-  });
-  res.json(result);
+  long = 21.141069;
+  lat = 72.803673;
+  console.log("http://www.google.com/maps/place/" + long + "," + lat);
 });
 module.exports = router;
+s
