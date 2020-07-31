@@ -873,7 +873,7 @@ router.post("/testing", async (req, res) => {
       try {
         var workbook = new Excel.Workbook();
         var worksheet = workbook.addWorksheet("Attendance Report");
-        var worksheet1 = workbook.addWorksheet("Memo Report");
+        // var worksheet1 = workbook.addWorksheet("Memo Report");
         worksheet.columns = [
           { header: "Employee Name", key: "Name", width: 32 },
           { header: "Date", key: "Date", width: 32 },
@@ -888,13 +888,13 @@ router.post("/testing", async (req, res) => {
           },
         ];
 
-        worksheet1.columns = [
-          { header: "Employee Name", key: "Name", width: 32 },
-          { header: "Memo Type", key: "Type", width: 15 },
-          { header: "Start and End Date", key: "Date", width: 30 },
-          { header: "Memo Accepted", key: "Accepted", width: 15 },
-          { header: "Memo Disapproved", key: "Disapproved", width: 15 },
-        ];
+        // worksheet1.columns = [
+        //   { header: "Employee Name", key: "Name", width: 32 },
+        //   { header: "Memo Type", key: "Type", width: 15 },
+        //   { header: "Start and End Date", key: "Date", width: 30 },
+        //   { header: "Memo Accepted", key: "Accepted", width: 15 },
+        //   { header: "Memo Disapproved", key: "Disapproved", width: 15 },
+        // ];
 
         for (var key in result) {
           for (var key1 in result[key]) {
