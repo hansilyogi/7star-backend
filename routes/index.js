@@ -9,6 +9,9 @@ var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
 var timingSchema = require("../models/timing.models");
+const mongoose = require("mongoose");
+var Excel = require("exceljs");
+var _ = require("lodash");
 const { stat } = require("fs");
 var attendImg = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -829,8 +832,176 @@ router.post("/timing", (req, res) => {
 });
 
 router.post("/testing", async (req, res) => {
-  long = 21.141069;
-  lat = 72.803673;
-  console.log("http://www.google.com/maps/place/" + long + "," + lat);
+  record = await attendeanceSchema
+    .find({
+      Date: {
+        $gte: req.body.startdate,
+        $lte: req.body.enddate,
+      },
+    })
+    .select("Status Date Time Day")
+    .populate({
+      path: "EmployeeId",
+      select: "Name",
+      match: {
+        SubCompany: mongoose.Types.ObjectId(req.body.company),
+      },
+    });
+  if (record.length >= 0) {
+    var result = [];
+    record.map(async (records) => {
+      if (records.EmployeeId != null) {
+        result.push(records);
+      }
+    });
+    // var memoresult = result;
+
+    if (result.length >= 0) {
+      var result = _.groupBy(result, "EmployeeId.Name");
+      result = _.forEach(result, function (value, key) {
+        result[key] = _.groupBy(result[key], function (item) {
+          return item.Date;
+        });
+      });
+      result = _.forEach(result, function (value, key) {
+        _.forEach(result[key], function (value, key1) {
+          result[key][key1] = _.groupBy(result[key][key1], function (item) {
+            return item.Status;
+          });
+        });
+      });
+      try {
+        var workbook = new Excel.Workbook();
+        var worksheet = workbook.addWorksheet("Attendance Report");
+        var worksheet1 = workbook.addWorksheet("Memo Report");
+        worksheet.columns = [
+          { header: "Employee Name", key: "Name", width: 32 },
+          { header: "Date", key: "Date", width: 32 },
+          { header: "Day", key: "Day", width: 15 },
+          { header: "Status", key: "Status", width: 15 },
+          { header: "In Time", key: "InTime", width: 15 },
+          { header: "Out Time", key: "OutTime", width: 15 },
+          {
+            header: "Total Working Hour",
+            key: "DifferenceTime",
+            width: 28,
+          },
+        ];
+
+        worksheet1.columns = [
+          { header: "Employee Name", key: "Name", width: 32 },
+          { header: "Memo Type", key: "Type", width: 15 },
+          { header: "Start and End Date", key: "Date", width: 30 },
+          { header: "Memo Accepted", key: "Accepted", width: 15 },
+          { header: "Memo Disapproved", key: "Disapproved", width: 15 },
+        ];
+
+        for (var key in result) {
+          for (var key1 in result[key]) {
+            var i = 0;
+            for (var key2 in result[key][key1]) {
+              if (key2 == "in") {
+                worksheet.addRow({
+                  Name: key,
+                  Date: key1,
+                  Day: result[key][key1][key2][i].Day,
+                  Status: "P",
+                  InTime: result[key][key1][key2][i].Time,
+                  OutTime: result[key][key1]["out"][i].Time,
+                  DifferenceTime: secondsToHms(
+                    moment(result[key][key1]["out"][i].Time, "H:mm:ss").diff(
+                      moment(result[key][key1][key2][i].Time, "H:mm:ss"),
+                      "seconds"
+                    )
+                  ),
+                });
+              }
+            }
+            i++;
+          }
+        }
+        // for (i = 0; i < memoresult.length; i++) {
+        //   var memoData = await memoSchema
+        //     .find({
+        //       Eid: memoresult[i].EmployeeId._id,
+        //       Type: memoresult[i].Status,
+        //       Date: {
+        //         $gte: req.body.startdate,
+        //         $lte: req.body.enddate,
+        //       },
+        //     })
+        //     .populate("Eid", "Name");
+        //   var groupmemo = _.groupBy(memoData, "Eid.Name");
+        //   var approved = 0,
+        //     disapproved = 0;
+        //   console.log(groupmemo);
+        //   for (var key in groupmemo) {
+        //     for (j = 0; j < groupmemo[key].length; j++) {
+        //       if (groupmemo[key][j].Status == true) {
+        //         approved++;
+        //       } else {
+        //         disapproved++;
+        //       }
+        //     }
+        //     console.log(key);
+        //     console.log(approved);
+        //     console.log(disapproved);
+        //     worksheet1.addRow({
+        //       Name: key,
+        //       Type: groupmemo[key][0].Type,
+        //       Date: req.body.startdate + " - " + req.body.enddate,
+        //       Accepted: approved,
+        //       Disapproved: disapproved,
+        //     });
+        //   }
+        // }
+
+        await workbook.xlsx.writeFile("./reports/" + req.body.name + ".xlsx");
+        var result = {
+          Message: "Excel Sheet Created",
+          Data: req.body.name + ".xlsx",
+          isSuccess: true,
+        };
+        res.json(result);
+      } catch (err) {
+        console.log("OOOOOOO this is the error: " + err);
+      }
+    } else {
+      var result = {
+        Message: "Excel Sheet Not Created",
+        Data: "No Data Found",
+        isSuccess: false,
+      };
+      res.json(result);
+    }
+  } else {
+    var result = {
+      Message: "Excel Sheet Not Created",
+      Data: "No Data Found",
+      isSuccess: false,
+    };
+    res.json(result);
+  }
 });
+
+function secondsToHms(d) {
+  d = Number(d);
+  var h = Math.floor(d / 3600);
+  var m = Math.floor((d % 3600) / 60);
+  var s = Math.floor((d % 3600) % 60);
+
+  var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
+  var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes, ") : "";
+  var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+  return hDisplay + mDisplay + sDisplay;
+}
+
+router.post("/getotp", (req, res) => {
+  var result = {};
+  result.Message = "OPT";
+  result.Data = 0;
+  result.isSuccess = true;
+  res.json(result);
+});
+
 module.exports = router;
