@@ -13,6 +13,25 @@ const mongoose = require("mongoose");
 var Excel = require("exceljs");
 var _ = require("lodash");
 const { stat } = require("fs");
+
+
+
+var cellArray = [];
+function str(i){
+    return i<0 ? "" : str(i/26-1)+String.fromCharCode(65+i%26);
+}
+for(var i=0;i<27*27;i++){
+    cellArray[i] = str(i);
+}
+
+function convertDateFormate(str) {
+    var date = new Date(str),
+      mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+      day = ("0" + date.getDate()).slice(-2);
+    return [day, mnth ,date.getFullYear()].join("/");
+}
+  
+
 var attendImg = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, "uploads");
@@ -343,6 +362,7 @@ router.post("/employee", async function(req, res, next) {
             result.Data = record;
             result.isSuccess = true;
         }
+        console.log(record.length);
         res.json(result);
     } else if (req.body.type == "getsingledata") {
         var record = await employeeSchema
@@ -824,14 +844,27 @@ router.post("/timing", (req, res) => {
 });
 
 router.post("/testing", async(req, res) => {
+    console.log(req.body);
+    dateArray = [];
+    countDate(req.body.month, req.body.year);
+    console.log(dateArray);
+    startdate = dateISOformate(dateArray[1]);
+    enddate = dateISOformate(dateArray[dateArray.length-1]);
+    console.log(startdate,"2020-08-01");
+    console.log(enddate,"2020-08-31");
+    //startdate = "2020-08-01";
+    //enddate = "2020-08-31";
+    
     record = await attendeanceSchema
         .find({
             Date: {
-                $gte: req.body.startdate,
-                $lte: req.body.enddate,
+                $gte: startdate,
+                $lte: enddate,
+                //$gte: dateISOformate(req.body.startdate),
+                //$lte: dateISOformate(req.body.enddate),
             },
         })
-        .select("Status Date Time Day")
+        .select("EmployeeId Status Date Time Day")
         .populate({
             path: "EmployeeId",
             select: "Name",
@@ -847,7 +880,6 @@ router.post("/testing", async(req, res) => {
             }
         });
         // var memoresult = result;
-
         if (result.length >= 0) {
             var result = _.groupBy(result, "EmployeeId.Name");
             result = _.forEach(result, function(value, key) {
@@ -862,11 +894,81 @@ router.post("/testing", async(req, res) => {
                     });
                 });
             });
+            //console.log(result);
+
             try {
                 var workbook = new Excel.Workbook();
                 var worksheet = workbook.addWorksheet("Attendance Report");
-                // var worksheet1 = workbook.addWorksheet("Memo Report");
                 worksheet.columns = [
+                    {header:"Sr.No",key: "Srno", width: 5 },
+                    {header:"Employee Name",key: "Name", width: 16},
+                    {header:"Parameters",key: "Parameters", width: 10},
+                ];
+                console.log(dateArray);
+                console.log(dateArray[1]);
+                console.log(dateArray[dateArray.length - 1]);
+                for(var columnIndex=1;columnIndex<=dateArray.length-1;columnIndex++){
+                    worksheet.getCell(cellArray[2+parseInt(columnIndex)]+1).font = {bold:true};
+                    worksheet.getCell(cellArray[2+parseInt(columnIndex)]+1).width = 2 ;
+                    worksheet.getCell(cellArray[2+parseInt(columnIndex)]+1).value = columnIndex;
+                }
+
+                var rowIndex = 1;
+                var srno = 1;
+                for(var key in result){
+                    var employeedate = [];
+                    worksheet.getCell(cellArray[0]+parseInt(rowIndex+1)).value = srno;
+                    worksheet.getCell(cellArray[1]+parseInt(rowIndex+1)).value = key;
+                    var tempIndex = 0;
+                    for(var tempkey in result[key]){
+                        var date = convertDateFormate(tempkey);
+                        employeedate[tempIndex] = date;
+                        tempIndex++;
+                    }
+                    for(var key1 in result[key]){
+                        worksheet.getCell(cellArray[2]+parseInt(rowIndex+1)).value = "Status";
+                        worksheet.getCell(cellArray[2]+parseInt(rowIndex+2)).value = "In Time";
+                        worksheet.getCell(cellArray[2]+parseInt(rowIndex+3)).value = "Out Time";
+
+                        for(var column = 1;column<=dateArray.length-1;column++){
+                            if(employeedate.findIndex(item => item == dateArray[column]) != -1){
+                                worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "P";
+                                for(var key2 in result[key][key1]){
+                                    if(key2 == "in"){
+                                        worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+2)).value = result[key][key1][key2][0].Time;
+                                    }
+                                    else if(key2 == "out"){
+                                        worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+3)).value = result[key][key1][key2][0].Time;
+                                    }
+                                }
+                            }
+                            else{
+                                worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
+                            }
+                        }
+                    }
+                rowIndex=parseInt(rowIndex)+3;
+                srno++;
+                }
+                worksheet.getCell('A'+parseInt(rowIndex+5)).value = "P => Present";
+                worksheet.getCell('A'+parseInt(rowIndex+6)).value = "A => Absent";
+                
+                /* var worksheet1 = workbook.addWorksheet("Memo Report");
+                worksheet.getRow(5).values = ['Employee Name', 'Date', 'Day', 'Status','In Time', 'Out Time', 'Total Working Hour'];     
+                worksheet.columns = [
+                    { key: "Name", width: 32 },
+                    { key: "Date", width: 32 },
+                    { key: "Day", width: 15 },
+                    { key: "Status", width: 15 },
+                    { key: "InTime", width: 15 },
+                    { key: "OutTime", width: 15 },
+                    {
+                        
+                        key: "DifferenceTime",
+                        width: 28,
+                    },
+                ]; */   
+                /*worksheet.columns = [
                     { header: "Employee Name", key: "Name", width: 32 },
                     { header: "Date", key: "Date", width: 32 },
                     { header: "Day", key: "Day", width: 15 },
@@ -878,7 +980,7 @@ router.post("/testing", async(req, res) => {
                         key: "DifferenceTime",
                         width: 28,
                     },
-                ];
+                ];*/
 
                 // worksheet1.columns = [
                 //   { header: "Employee Name", key: "Name", width: 32 },
@@ -888,12 +990,11 @@ router.post("/testing", async(req, res) => {
                 //   { header: "Memo Disapproved", key: "Disapproved", width: 15 },
                 // ];
 
-                for (var key in result) {
+                /*for (var key in result) {
                     for (var key1 in result[key]) {
                         var i = 0;
                         for (var key2 in result[key][key1]) {
                             if (key2 == "in") {
-                                // check outTime data exists or not
                                 if (result[key][key1]["out"] == undefined) {
                                     var outTime = "11:00:00 pm";
                                 } else {
@@ -912,12 +1013,14 @@ router.post("/testing", async(req, res) => {
                                             "seconds"
                                         )
                                     ),
+                                    DifferenceTime:calculateTime(result[key][key1][key2][i].Time,outTime)
+                                   
                                 });
                             }
                         }
                         i++;
                     }
-                }
+                }*/
                 // for (i = 0; i < memoresult.length; i++) {
                 //   var memoData = await memoSchema
                 //     .find({
@@ -1001,5 +1104,81 @@ router.post("/getotp", (req, res) => {
     result.isSuccess = true;
     res.json(result);
 });
+
+function calculateTime(inTime, outTime) {
+    var startTime = moment(inTime, "HH:mm:ss a");
+    var endTime = moment(outTime, "HH:mm:ss a");
+    var duration = moment.duration(endTime.diff(startTime));
+    var hours = parseInt(duration.asHours());
+    var minutes = parseInt(duration.asMinutes()) % 60;
+    return hours + " hour and " + minutes + " minutes.";
+}
+
+function dateISOformate(date){
+    date = date.split("/");
+    console.log(date);
+    date = date[2]+"-"+date[1]+"-"+date[0];
+    console.log(date);
+    return date;
+}
+/*
+router.post('/testapi',async(req, res) => {
+    record = await attendeanceSchema.find({});
+    console.log(record.length);
+    console.log(record);
+    res.json(record);
+});*/
+
+var dateArray = [];
+
+var countDate  = function(mm,yyyy){
+    var year=parseInt(yyyy);
+    var months=parseInt(mm);
+    var startdate;
+    var enddate;
+    if (
+    months == 01 ||
+    months == 03 ||
+    months == 05 ||
+    months == 07 ||
+    months == 08 ||
+    months == 10 ||
+    months == 12
+    ) {
+    startdate = 01;
+    enddate = 31;
+    } else if (
+    months == 04 ||
+    months == 06 ||
+    months == 09 ||
+    months == 11
+    ) {
+    startdate = 01;
+    enddate = 30;
+    } else if (months == 02) {
+    startdate = 01;
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        enddate = 29;
+        
+    } else {
+        enddate = 28;
+    }
+    }
+    for(var index=parseInt(startdate);index<=parseInt(enddate);index++){
+        if(months>9 && index<=9){
+            dateArray[index] = '0'+index+'/'+months+'/'+year
+        }
+        else if(months<=9 && index > 9){
+            dateArray[index] = index+'/0'+months+'/'+year
+        }
+        else if(months<=9 && index <= 9){
+            dateArray[index] = '0'+index+'/0'+months+'/'+year
+        }
+        else if(months>9 && index > 9){
+            dateArray[index] = +index+'/'+months+'/'+year
+        }
+    }
+}
+
 
 module.exports = router;
