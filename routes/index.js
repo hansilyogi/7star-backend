@@ -844,17 +844,51 @@ router.post("/timing", (req, res) => {
 });
 
 router.post("/testing", async(req, res) => {
-    console.log(req.body);
     dateArray = [];
+    //console.log(req.body);
     countDate(req.body.month, req.body.year);
-    console.log(dateArray);
-    startdate = dateISOformate(dateArray[1]);
-    enddate = dateISOformate(dateArray[dateArray.length-1]);
-    console.log(startdate,"2020-08-01");
-    console.log(enddate,"2020-08-31");
-    //startdate = "2020-08-01";
-    //enddate = "2020-08-31";
-    
+    //startdate = dateISOformate(dateArray[1]);
+    //enddate = dateISOformate(dateArray[dateArray.length-1]);
+    startdate = dateArray[1];
+    enddate = dateArray[dateArray.length-1];
+    //console.log(dateArray);
+    //startdate = "01/08/2020";
+    //enddate = "31/08/2020";
+    console.log(startdate);
+    console.log(enddate);
+    record = await attendeanceSchema.aggregate([
+        {
+            $match : {
+                Date : {
+                    "$lte":enddate,
+                    "$gte":startdate
+                }
+            }
+        },
+        {
+            $lookup:{
+                from: "employees",
+                localField: "EmployeeId",
+                foreignField: "_id",
+                as: "EmployeeId"
+            }
+        },
+        { "$unwind": "$EmployeeId" },
+    ]);
+    //console.log(record);
+    /*startDate = new Date("2020-09-01").toISOString();
+    endDate =  new Date("2020-09-30").toISOString();
+    console.log(startDate);
+    record = await attendeanceSchema.find({
+                    Date:
+                        {
+                            $lte: endDate,
+                            $gte: startDate
+                        }
+            }); 
+    startdate = "2020-01-09";
+    enddate = "2020-30-09";*/
+    /*
     record = await attendeanceSchema
         .find({
             Date: {
@@ -871,7 +905,7 @@ router.post("/testing", async(req, res) => {
             match: {
                 SubCompany: mongoose.Types.ObjectId(req.body.company),
             },
-        });
+        });*/
     if (record.length >= 0) {
         var result = [];
         record.map(async(records) => {
@@ -894,8 +928,7 @@ router.post("/testing", async(req, res) => {
                     });
                 });
             });
-            //console.log(result);
-
+            console.log(result);
             try {
                 var workbook = new Excel.Workbook();
                 var worksheet = workbook.addWorksheet("Attendance Report");
@@ -904,9 +937,6 @@ router.post("/testing", async(req, res) => {
                     {header:"Employee Name",key: "Name", width: 16},
                     {header:"Parameters",key: "Parameters", width: 10},
                 ];
-                console.log(dateArray);
-                console.log(dateArray[1]);
-                console.log(dateArray[dateArray.length - 1]);
                 for(var columnIndex=1;columnIndex<=dateArray.length-1;columnIndex++){
                     worksheet.getCell(cellArray[2+parseInt(columnIndex)]+1).font = {bold:true};
                     worksheet.getCell(cellArray[2+parseInt(columnIndex)]+1).width = 2 ;
@@ -921,31 +951,56 @@ router.post("/testing", async(req, res) => {
                     worksheet.getCell(cellArray[1]+parseInt(rowIndex+1)).value = key;
                     var tempIndex = 0;
                     for(var tempkey in result[key]){
-                        var date = convertDateFormate(tempkey);
-                        employeedate[tempIndex] = date;
-                        tempIndex++;
+                        //var date = convertDateFormate(tempkey);
+                        //employeedate[tempIndex] = date;
+                        if(dateArray.indexOf(tempkey) != -1){
+                            employeedate[tempIndex] = tempkey;
+                            tempIndex++;
+                        }
                     }
+                    console.log(employeedate);
+                                    
+                    for(var column = 1;column<=dateArray.length-1;column++){
+                        worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
+                    }
+                    var column = 1;
                     for(var key1 in result[key]){
                         worksheet.getCell(cellArray[2]+parseInt(rowIndex+1)).value = "Status";
                         worksheet.getCell(cellArray[2]+parseInt(rowIndex+2)).value = "In Time";
                         worksheet.getCell(cellArray[2]+parseInt(rowIndex+3)).value = "Out Time";
-
-                        for(var column = 1;column<=dateArray.length-1;column++){
+                        if(dateArray.indexOf(key1)!=-1){                            
+                            //for(var column = 1;column<=dateArray.length-1;column++){
                             if(employeedate.findIndex(item => item == dateArray[column]) != -1){
-                                worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "P";
+                                console.log(key1);
+                                temp = key1.split("/");
+                                temp = temp[0];
+                                worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+1)).value = "P";
+                                var i = 0;
                                 for(var key2 in result[key][key1]){
                                     if(key2 == "in"){
-                                        worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+2)).value = result[key][key1][key2][0].Time;
+                                        //console.log(result[key][key1][key2][0]['Time']);
+                                        worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+2)).value = result[key][key1][key2][0]['Time'];
                                     }
-                                    else if(key2 == "out"){
-                                        worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+3)).value = result[key][key1][key2][0].Time;
+                                    else if(key2 == "out" ){
+                                        //console.log(result[key][key1][key2][0]['Time']);
+                                        worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+3)).value = result[key][key1][key2][0]['Time'];
+                                    } 
+                                    else if(i==2){
+                                        break;
                                     }
+                                    i++; 
                                 }
                             }
-                            else{
+                            else if(employeedate.findIndex(item => item == dateArray[column]) == -1){
                                 worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
                             }
+                            column++;  
+                            
+                            //}
                         }
+                       
+                                            
+                        
                     }
                 rowIndex=parseInt(rowIndex)+3;
                 srno++;
@@ -1116,18 +1171,9 @@ function calculateTime(inTime, outTime) {
 
 function dateISOformate(date){
     date = date.split("/");
-    console.log(date);
     date = date[2]+"-"+date[1]+"-"+date[0];
-    console.log(date);
     return date;
 }
-/*
-router.post('/testapi',async(req, res) => {
-    record = await attendeanceSchema.find({});
-    console.log(record.length);
-    console.log(record);
-    res.json(record);
-});*/
 
 var dateArray = [];
 
