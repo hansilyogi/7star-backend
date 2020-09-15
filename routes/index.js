@@ -862,7 +862,8 @@ router.post("/testing", async(req, res) => {
                 Date : {
                     "$lte":enddate,
                     "$gte":startdate
-                }
+                },
+
             }
         },
         {
@@ -874,8 +875,13 @@ router.post("/testing", async(req, res) => {
             }
         },
         { "$unwind": "$EmployeeId" },
+        {
+            $match :{
+                "EmployeeId.SubCompany":mongoose.Types.ObjectId(req.body.company),
+            }
+        }
     ]);
-    //console.log(record);
+    console.log(record);
     /*startDate = new Date("2020-09-01").toISOString();
     endDate =  new Date("2020-09-30").toISOString();
     console.log(startDate);
