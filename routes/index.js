@@ -13,6 +13,7 @@ const mongoose = require("mongoose");
 var Excel = require("exceljs");
 var _ = require("lodash");
 const { stat } = require("fs");
+var formidable = require('formidable');
 
 
 
@@ -542,12 +543,9 @@ function getdate() {
     return attendance;
 }
 
-router.post("/attendance", upload.single("attendance"), async function(
-    req,
-    res,
-    next
-) {
+router.post("/attendance", upload.single("attendance"), async function(req,res,next) {
     period = getdate();
+    console.log(req.body.type);
     if (req.body.type == "in") {
         var longlat = await employeeSchema
             .find({ _id: req.body.employeeid })
@@ -570,12 +568,13 @@ router.post("/attendance", upload.single("attendance"), async function(
         var record = attendeanceSchema({
             EmployeeId: req.body.employeeid,
             Status: req.body.type,
-            Date: period.date,
+            Date: Date.now(),
             Time: period.time,
             Day: period.day,
             Image: req.file.filename,
             Area: area,
         });
+       
         record.save({}, function(err, record) {
             var result = {};
             if (err) {
@@ -605,6 +604,7 @@ router.post("/attendance", upload.single("attendance"), async function(
             req.body.latitude,
             longlat[0]["SubCompany"].long
         );
+        console.log(dist);
         var NAME = longlat[0]["SubCompany"].Name;
         var fd = dist * 1000;
         var area =
@@ -617,7 +617,8 @@ router.post("/attendance", upload.single("attendance"), async function(
         var record = attendeanceSchema({
             EmployeeId: req.body.employeeid,
             Status: req.body.type,
-            Date: period.date,
+            Date: Date.now(),
+            //Date: period.date,
             Time: period.time,
             Day: period.day,
             Image: req.file.filename,
@@ -626,6 +627,7 @@ router.post("/attendance", upload.single("attendance"), async function(
         record.save({}, function(err, record) {
             var result = {};
             if (err) {
+                console.log(err);
                 result.Message = "Attendance Not Marked";
                 result.Data = [];
                 result.isSuccess = false;
@@ -1231,6 +1233,200 @@ var countDate  = function(mm,yyyy){
         }
     }
 }
-
+/*
+router.post("/testattendance", upload.single("attendance"), async function(req,res,next) {
+    period = getdate();
+    console.log(req.body);
+    if (req.body.type == "in") {
+        var longlat = await employeeSchema
+            .find({ _id: req.body.employeeid })
+            .populate("SubCompany");
+        dist = calculatedistance(
+            req.body.longitude,
+            longlat[0]["SubCompany"].lat,
+            req.body.latitude,
+            longlat[0]["SubCompany"].long
+        );
+        var NAME = longlat[0]["SubCompany"].Name;
+        var fd = dist * 1000;
+        var area =
+            fd > 100 ?
+            "http://www.google.com/maps/place/" +
+            req.body.latitude +
+            "," +
+            req.body.longitude :
+            NAME;
+        var record = attendeanceSchema({
+            EmployeeId: req.body.employeeid,
+            Status: req.body.type,
+            Date: Date.now(),
+            Time: period.time,
+            Day: period.day,
+            Image: req.file.filename,
+            Area: area,
+        });
+       
+        record.save({}, function(err, record) {
+            var result = {};
+            if (err) {
+                console.log(err);
+                result.Message = "Attendance Not Marked";
+                result.Data = [];
+                result.isSuccess = false;
+            } else {
+                if (record.length == 0) {
+                    result.Message = "Attendance Not Marked";
+                    result.Data = [];
+                    result.isSuccess = false;
+                } else {
+                    result.Message = "Attendance Marked";
+                    result.Data = [record];
+                    result.isSuccess = true;
+                }
+            }
+            res.json(result);
+        });
+    } else if (req.body.type == "out") {
+        var longlat = await employeeSchema
+            .find({ _id: req.body.employeeid })
+            .populate("SubCompany");
+        dist = calculatedistance(
+            req.body.longitude,
+            longlat[0]["SubCompany"].lat,
+            req.body.latitude,
+            longlat[0]["SubCompany"].long
+        );
+        var NAME = longlat[0]["SubCompany"].Name;
+        var fd = dist * 1000;
+        var area =
+            fd > 100 ?
+            "http://www.google.com/maps/place/" +
+            req.body.latitude +
+            "," +
+            req.body.longitude :
+            NAME;
+        var record = attendeanceSchema({
+            EmployeeId: req.body.employeeid,
+            Status: req.body.type,
+            //Date: period.date,
+            Date: Date.now(),
+            Time: period.time,
+            Day: period.day,
+            Image: req.file.filename,
+            Area: area,
+        });
+        record.save({}, function(err, record) {
+            var result = {};
+            if (err) {
+                console.log(err);
+                result.Message = "Attendance Not Marked";
+                result.Data = [];
+                result.isSuccess = false;
+            } else {
+                if (record.length == 0) {
+                    result.Message = "Attendance Not Marked";
+                    result.Data = [];
+                    result.isSuccess = false;
+                } else {
+                    result.Message = "Attendance Marked";
+                    result.Data = [record];
+                    result.isSuccess = true;
+                }
+            }
+            res.json(result);
+        });
+    } else if (req.body.type == "getdata") {
+        const day = req.body.day;
+        const sdate = req.body.sd == "" ? undefined : req.body.sd;
+        const edate = req.body.ed == "" ? undefined : req.body.ed;
+        const area = req.body.afilter;
+        const status = req.body.status;
+        let query = {};
+        if (req.body.rm == 0) {
+            if (day) {
+                if (day != "All") {
+                    query.Day = day;
+                }
+            }
+            if (sdate != undefined || edate != undefined) {
+                query.Date = {
+                    $gte: sdate,
+                    $lte: edate,
+                };
+            }
+            if (area) {
+                if (area == 0) {} else if (area == 2) {
+                    query.Area = { $regex: "http://www.google.com/maps/place/" };
+                } else {
+                    query.Area = area;
+                }
+            }
+            if (status) {
+                if (status == 0) {} else if (status == 1) {
+                    query.Status = "in";
+                } else if (status == 2) {
+                    query.Status = "out";
+                }
+            }
+        }
+        var record = await attendeanceSchema.find(query).populate("EmployeeId");
+        var result = {};
+        if (record.length == 0) {
+            result.Message = "Attendance Not Found";
+            result.Data = [];
+            result.isSuccess = false;
+        } else {
+            result.Message = "Attendance Found";
+            result.Data = record;
+            result.isSuccess = true;
+        }
+        res.json(result);
+    } else if (req.body.type == "getsingle") {
+        if (req.body.afilter == 0) {
+            var record = await attendeanceSchema
+                .find({ EmployeeId: req.body.EmployeeId })
+                .populate("EmployeeId");
+        } else if (req.body.afilter == 1) {
+            var record = await attendeanceSchema
+                .find({ EmployeeId: req.body.EmployeeId, Area: "Inside Area" })
+                .populate("EmployeeId");
+        } else {
+            var record = await attendeanceSchema
+                .find({ EmployeeId: req.body.EmployeeId, Area: "Outside Area" })
+                .populate("EmployeeId");
+        }
+        var result = {};
+        if (record.length == 0) {
+            result.Message = "Employee Not Found";
+            result.Data = [];
+            result.isSuccess = false;
+        } else {
+            result.Message = "Employee Found";
+            result.Data = record;
+            result.isSuccess = true;
+        }
+        res.json(result);
+    } else if (req.body.type == "getareafilter") {
+        subcompanySchema.find({}, (err, record) => {
+            var result = {};
+            if (err) {
+                result.Message = "SubComapny Not Found";
+                result.Data = [];
+                result.isSuccess = false;
+            } else {
+                if (record.length == 0) {
+                    result.Message = "SubComapny Not Found";
+                    result.Data = [];
+                    result.isSuccess = false;
+                } else {
+                    result.Message = "SubComapny Found";
+                    result.Data = record;
+                    result.isSuccess = true;
+                }
+            }
+            res.json(result);
+        });
+    }
+});*/
 
 module.exports = router;
