@@ -543,6 +543,47 @@ function getdate() {
     return attendance;
 }
 
+
+router.post("/beforeattendance", (req, res) => {
+    var date = moment()
+      .tz("Asia/Calcutta")
+      .format("DD MM YYYY, h:mm:ss a")
+      .split(",")[0];
+    date = date.split(" ");
+    date = date[0] + "/" + date[1] + "/" + date[2];
+    attendeanceSchema.find(
+      { EmployeeId: req.body.id, Date: Date.now(), Status: "in" },
+      (err, record) => {
+        var result = {};
+        if (err) {
+          result.Message = "No Attendance Found";
+          result.Data = [];
+          result.isSuccess = false;
+        } else {
+          if (record.length == 0) {
+            result.Message = "No Attendance Found";
+            result.Data = [
+              {
+                duty: "in",
+              },
+            ];
+            result.isSuccess = true;
+          } else {
+            result.Message = "Attendance Found";
+            result.Data = [
+              {
+                duty: "out",
+              },
+            ];
+            result.isSuccess = true;
+          }
+        }
+        res.json(result);
+      }
+    );
+  });
+  
+
 router.post("/attendance", upload.single("attendance"), async function(req,res,next) {
     period = getdate();
     console.log(req.body.type);
