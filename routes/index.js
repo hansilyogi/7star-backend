@@ -624,7 +624,6 @@ router.post("/beforeattendance", async  (req, res) => {
     );
   });
   
-
 router.post("/attendance", upload.single("attendance"), async function(req,res,next) {
     period = getdate();
     var date = moment()
@@ -634,6 +633,128 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
     date = date.split(" ");
     date = date[2]+ "-" + date[1] + "-" + date[0];
     if (req.body.type == "in") {
+        record = await attendeanceSchema.find({EmployeeId:req.body.employeeid, Date:date, Status:"in"});
+        if(record.length != 0){
+            var result = {};
+            result.Message = "Already Duty-In";
+            result.Data = [];
+            result.isSuccess = false;
+            res.json(result);
+        }
+        else{
+            var longlat = await employeeSchema
+                .find({ _id: req.body.employeeid })
+                .populate("SubCompany");
+            dist = calculatedistance(
+                req.body.longitude,
+                longlat[0]["SubCompany"].lat,
+                req.body.latitude,
+                longlat[0]["SubCompany"].long
+            );
+            var NAME = longlat[0]["SubCompany"].Name;
+            var fd = dist * 1000;
+            var area =
+                fd > 100 ?
+                "http://www.google.com/maps/place/" +
+                req.body.latitude +
+                "," +
+                req.body.longitude :
+                NAME;
+            var record = attendeanceSchema({
+                EmployeeId: req.body.employeeid,
+                Status: req.body.type,
+                Date: date,
+                Time: period.time,
+                Day: period.day,
+                Image: req.file.filename,
+                Area: area,
+            });
+        
+            record.save({}, function(err, record) {
+                var result = {};
+                console.log(err);
+                if (err) {
+                    result.Message = "Attendance Not Marked";
+                    result.Data = [];
+                    result.isSuccess = false;
+                } else {
+                    if (record.length == 0) {
+                        result.Message = "Attendance Not Marked";
+                        result.Data = [];
+                        result.isSuccess = false;
+                    } else {
+                        result.Message = "Attendance Marked";
+                        result.Data = [record];
+                        result.isSuccess = true;
+                    }
+                }
+                res.json(result);
+            });
+        }
+    }
+    else if (req.body.type == "out") {
+        record = await attendeanceSchema.find({EmployeeId:req.body.employeeid, Date:date, Status:"out"});
+        if(record.length != 0){
+            var result = {};
+            result.Message = "Already Duty-Out";
+            result.Data = [];
+            result.isSuccess = false;
+            res.json(result);
+        }
+        else{
+            var longlat = await employeeSchema
+            .find({ _id: req.body.employeeid })
+            .populate("SubCompany");
+            dist = calculatedistance(
+                req.body.longitude,
+                longlat[0]["SubCompany"].lat,
+                req.body.latitude,
+                longlat[0]["SubCompany"].long
+            );
+            console.log(dist);
+            var NAME = longlat[0]["SubCompany"].Name;
+            var fd = dist * 1000;
+            var area =
+                fd > 100 ?
+                "http://www.google.com/maps/place/" +
+                req.body.latitude +
+                "," +
+                req.body.longitude :
+                NAME;
+            var record = attendeanceSchema({
+                EmployeeId: req.body.employeeid,
+                Status: req.body.type,
+                Date: date,
+                //Date: period.date,
+                Time: period.time,
+                Day: period.day,
+                Image: req.file.filename,
+                Area: area,
+            });
+            record.save({}, function(err, record) {
+                var result = {};
+                if (err) {
+                    console.log(err);
+                    result.Message = "Attendance Not Marked";
+                    result.Data = [];
+                    result.isSuccess = false;
+                } else {
+                    if (record.length == 0) {
+                        result.Message = "Attendance Not Marked";
+                        result.Data = [];
+                        result.isSuccess = false;
+                    } else {
+                        result.Message = "Attendance Marked";
+                        result.Data = [record];
+                        result.isSuccess = true;
+                    }
+                }
+                res.json(result);
+            });
+        }
+    }
+        
+    /*if (req.body.type == "in") {
         var longlat = await employeeSchema
             .find({ _id: req.body.employeeid })
             .populate("SubCompany");
@@ -732,7 +853,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
             }
             res.json(result);
         });
-    } else if (req.body.type == "getdata") {
+    }*/ else if (req.body.type == "getdata") {
         const day = req.body.day;
         const sdate = req.body.sd == "" ? undefined : req.body.sd;
         const edate = req.body.ed == "" ? undefined : req.body.ed;
@@ -1528,5 +1649,10 @@ router.post("/testattendance", upload.single("attendance"), async function(req,r
         });
     }
 });*/
+/*
+router.post("/removedata",async function(req,res){
+    var data =  await attendeanceSchema.find({EmployeeId:req.body.id}).remove();
+    console.log(data);
+})*/
 
 module.exports = router;
