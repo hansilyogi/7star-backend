@@ -14,6 +14,7 @@ var Excel = require("exceljs");
 var _ = require("lodash");
 const { stat } = require("fs");
 var formidable = require('formidable');
+const { runInNewContext } = require("vm");
 
 
 
@@ -51,7 +52,27 @@ var attendImg = multer.diskStorage({
     },
 });
 
+var empImg = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, "uploads");
+    },
+    filename: function(req, file, cb) {
+        console.log(file);
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(
+            null,
+            file.fieldname +
+            "-" +
+            uniqueSuffix +
+            "." +
+            file.originalname.split(".")[1]
+        );
+    },
+});
+
 var upload = multer({ storage: attendImg });
+
+var uplodEmp = multer({ storage : empImg});
 
 router.post("/company", function(req, res, next) {
     if (req.body.type == "insert") {
@@ -305,8 +326,17 @@ router.post("/subcompany", function(req, res, next) {
     }
 });
 
-router.post("/employee", async function(req, res, next) {
+router.post("/employee", uplodEmp.single('employeeImage'), async function(req, res, next) {
     if (req.body.type == "insert") {
+        console.log(req.body);
+        subcompanydetail = await subcompanySchema.findById(req.body.subcompany)
+        .populate("CompanyId")
+        .populate({
+            path: "CompanyId",
+            select: "Name"
+        });
+        console.log(req.file.filename);
+        var employeeCode = autogenerateID(req.body,subcompanydetail);
         var record = new employeeSchema({
             FirstName: req.body.firstname,
             MiddleName: req.body.middlename,
@@ -326,12 +356,14 @@ router.post("/employee", async function(req, res, next) {
             TerminationDate: req.body.terminationdate,
             Prohibition: req.body.prohibition,
             Idtype: req.body.idtype,
-            IDNumber: req.body.idnumber,
+            IDNumber: employeeCode,
             Department: req.body.department,
             Designation: req.body.designation,
             SubCompany: req.body.subcompany,
             Timing: req.body.timing,
+            Image : req.file.filename,
         });
+        console.log(record);
         record.save({}, function(err, record) {
             var result = {};
             if (err) {
@@ -352,7 +384,14 @@ router.post("/employee", async function(req, res, next) {
             res.json(result);
         });
     } else if (req.body.type == "getdata") {
-        var record = await employeeSchema.find({}).populate("SubCompany");
+        console.log(req.body);
+        //var record = await employeeSchema.find({}).populate("SubCompany");
+        var record = await employeeSchema.find({})
+        .populate({
+            path:"Timing",
+            select:"StartTime EndTime"
+        });
+        console.log(record);
         var result = {};
         if (record.length == 0) {
             result.Message = "Employee Not Found";
@@ -544,16 +583,18 @@ function getdate() {
 }
 
 
-router.post("/beforeattendance", (req, res) => {
+router.post("/beforeattendance", async  (req, res) => {
     var date = moment()
       .tz("Asia/Calcutta")
       .format("DD MM YYYY, h:mm:ss a")
       .split(",")[0];
     date = date.split(" ");
-    date = date[0] + "/" + date[1] + "/" + date[2];
+    //date = date[0] + "/" + date[1] + "/" + date[2];
+    date = date[2]+ "-" + date[1] + "-" + date[0];
     attendeanceSchema.find(
-      { EmployeeId: req.body.id, Date: Date.now(), Status: "in" },
+      { EmployeeId: req.body.id, Date: date, Status: "in" },
       (err, record) => {
+          console.log(record);
         var result = {};
         if (err) {
           result.Message = "No Attendance Found";
@@ -586,7 +627,12 @@ router.post("/beforeattendance", (req, res) => {
 
 router.post("/attendance", upload.single("attendance"), async function(req,res,next) {
     period = getdate();
-    console.log(req.body.type);
+    var date = moment()
+      .tz("Asia/Calcutta")
+      .format("DD MM YYYY, h:mm:ss a")
+      .split(",")[0];
+    date = date.split(" ");
+    date = date[2]+ "-" + date[1] + "-" + date[0];
     if (req.body.type == "in") {
         var longlat = await employeeSchema
             .find({ _id: req.body.employeeid })
@@ -609,7 +655,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
         var record = attendeanceSchema({
             EmployeeId: req.body.employeeid,
             Status: req.body.type,
-            Date: Date.now(),
+            Date: date,
             Time: period.time,
             Day: period.day,
             Image: req.file.filename,
@@ -618,6 +664,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
        
         record.save({}, function(err, record) {
             var result = {};
+            console.log(err);
             if (err) {
                 result.Message = "Attendance Not Marked";
                 result.Data = [];
@@ -658,7 +705,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
         var record = attendeanceSchema({
             EmployeeId: req.body.employeeid,
             Status: req.body.type,
-            Date: Date.now(),
+            Date: date,
             //Date: period.date,
             Time: period.time,
             Day: period.day,
@@ -795,11 +842,13 @@ router.post("/location", async(req, res) => {
 });
 
 router.post("/timing", (req, res) => {
+    console.log(req.body);
     if (req.body.type == "insert") {
         var record = timingSchema({
             Name: req.body.name,
             StartTime: req.body.st,
             EndTime: req.body.et,
+            WeekOff : req.body.weekoff,
         });
         record.save({}, (err, record) => {
             var result = {};
@@ -862,7 +911,7 @@ router.post("/timing", (req, res) => {
         });
     } else if (req.body.type == "update") {
         timingSchema.findByIdAndUpdate(
-            req.body.id, { Name: req.body.name, StartTime: req.body.st, EndTime: req.body.et },
+            req.body.id, { Name: req.body.name, StartTime: req.body.st, EndTime: req.body.et, WeekOff:req.body.weekoff},
             (err, record) => {
                 var result = {};
                 if (err) {
@@ -924,7 +973,7 @@ router.post("/testing", async(req, res) => {
             }
         }
     ]);
-    console.log(record);
+    //console.log(record);
     /*startDate = new Date("2020-09-01").toISOString();
     endDate =  new Date("2020-09-30").toISOString();
     console.log(startDate);
@@ -1273,6 +1322,16 @@ var countDate  = function(mm,yyyy){
             dateArray[index] = +index+'/'+months+'/'+year
         }
     }
+}
+
+function autogenerateID(EmpDetails,CompanyDetail){
+    //console.log(EmpDetails);
+    //console.log(CompanyDetail.Name.replace(/\s/gi, "").toUpperCase().substr(0,3)+CompanyDetail.CompanyId.Name.replace(/\s/gi, "").toUpperCase().substr(0,3));
+    //console.log(EmpDetails.firstname.toUpperCase().substr(0,3)+EmpDetails.mobile.substr(0,3)+EmpDetails.dob.substr(0,2));
+    employeecode = CompanyDetail.Name.replace(/\s/gi, "").toUpperCase().substr(0,3)+CompanyDetail.CompanyId.Name.replace(/\s/gi, "").toUpperCase().substr(0,3)+
+                    EmpDetails.firstname.toUpperCase().substr(0,3)+EmpDetails.mobile.substr(0,3)+EmpDetails.dob.substr(0,2);
+    return employeecode;
+
 }
 /*
 router.post("/testattendance", upload.single("attendance"), async function(req,res,next) {

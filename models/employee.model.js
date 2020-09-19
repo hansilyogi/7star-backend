@@ -28,6 +28,7 @@ var newSchema = mongoose.Schema({
     ref: "timing",
     required: true,
   },
+  Image : String,
 });
 
 const admin = mongoose.model("employee", newSchema);
