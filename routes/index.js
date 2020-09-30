@@ -1066,6 +1066,7 @@ router.post("/testing", async(req, res) => {
     enddate = dateArray[dateArray.length-1];
     //data is not proper so, I use this method.
     //Created by Dhanpal 30.09
+    console.log(dateArray);
     if(startdate == "2020-08-01" || startdate=="2020-07-01"){
     record = await backupattendace
         .find({
@@ -1154,8 +1155,8 @@ router.post("/testing", async(req, res) => {
                     else{
                         return item.Date.toISOString().split('T')[0];
                     }
-                    
                 });
+                //console.log(result);
             });
             result = _.forEach(result, function(value, key) {
                 _.forEach(result[key], function(value, key1) {
