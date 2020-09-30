@@ -1066,9 +1066,11 @@ router.post("/testing", async(req, res) => {
     enddate = dateArray[dateArray.length-1];
     //data is not proper so, I use this method.
     //Created by Dhanpal 30.09
-    console.log(dateArray);
-    if(startdate == "2020-08-01" || startdate=="2020-07-01"){
-    record = await backupattendace
+        
+    if(startdate == "2020-08-01" && enddate == "2020-08-31" || startdate == "2020-07-01" && enddate == "2020-07-31"){
+        startdate = startdate+"T00:00:00.000Z";
+        enddate = enddate+"T00:00:00.000Z";
+        record = await backupattendace
         .find({
             Date: {
                 $gte: startdate,
@@ -1084,7 +1086,6 @@ router.post("/testing", async(req, res) => {
             },
         }); 
     }
-   
     // record = await backupattendace.aggregate([
     //     {
     //         $match : {
@@ -1149,14 +1150,13 @@ router.post("/testing", async(req, res) => {
             var result = _.groupBy(result, "EmployeeId.Name");
             result = _.forEach(result, function(value, key) {
                 result[key] = _.groupBy(result[key], function(item) {
-                    if(startdate == "2020-08-01" || startdate=="2020-07-01"){
+                    if(startdate == "2020-08-01T00:00:00.000Z" || startdate=="2020-07-01T00:00:00.000Z"){
                         return item.Date.split("T")[0];
                     }
                     else{
                         return item.Date.toISOString().split('T')[0];
                     }
                 });
-                //console.log(result);
             });
             result = _.forEach(result, function(value, key) {
                 _.forEach(result[key], function(value, key1) {
