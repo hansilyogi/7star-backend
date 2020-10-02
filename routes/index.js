@@ -16,6 +16,8 @@ var _ = require("lodash");
 const { stat } = require("fs");
 var formidable = require('formidable');
 const { runInNewContext } = require("vm");
+const { json } = require("express");
+const { stringify } = require("querystring");
 
 
 
@@ -1058,69 +1060,85 @@ router.post("/timing", (req, res) => {
     }
 });
 
+//Created by Dhanpal 30.09
+// Creating Report API 
 router.post("/testing", async(req, res) => {
     dateArray = [];
     var record;
-    countDate(req.body.month, req.body.year);
+    if(req.body.month=="08" && req.body.year=="2020" || req.body.month=="07" && req.body.year=="2020"){
+        countDate(req.body.month, req.body.year);
+    } else {
+        countDateISO(req.body.month, req.body.year);
+    }
+    
     startdate = dateArray[1];
     enddate = dateArray[dateArray.length-1];
     //data is not proper so, I use this method.
-    //Created by Dhanpal 30.09
-        
-    if(startdate == "2020-08-01" && enddate == "2020-08-31" || startdate == "2020-07-01" && enddate == "2020-07-31"){
-        startdate = startdate+"T00:00:00.000Z";
-        enddate = enddate+"T00:00:00.000Z";
-        record = await backupattendace
-        .find({
-            Date: {
-                $gte: startdate,
-                $lte: enddate,
-            },
-        })
-        .select("EmployeeId Status Date Time Day")
-        .populate({
-            path: "EmployeeId",
-            select: "Name",
-            match: {
-                SubCompany: mongoose.Types.ObjectId(req.body.company),
-            },
-        }); 
-    }
-    // record = await backupattendace.aggregate([
-    //     {
-    //         $match : {
-    //             Date : {
-    //                 "$lte":enddate,
-    //                 "$gte":startdate
-    //             },
-    //         }
-    //     },
-    //     {
-    //         $lookup:{
-    //             from: "employees",
-    //             localField: "EmployeeId",
-    //             foreignField: "_id",
-    //             as: "EmployeeId"
-    //         }
-    //     },
-    //     { "$unwind": "$EmployeeId" },
-    //     {
-    //         $match :{
-    //             "EmployeeId.SubCompany":mongoose.Types.ObjectId(req.body.company),
-    //         }
-    //     }
-    // ]);
+    
+      
+    // if(startdate == "2020-08-01" && enddate == "2020-08-31" || startdate == "2020-07-01" && enddate == "2020-07-31"){
+        // startdate = startdate+"T00:00:00.000Z";
+        // enddate = enddate+"T00:00:00.000Z";
+        // record = await backupattendace
+        // .find({
+        //     Date: {
+        //         $gte: startdate,
+        //         $lte: enddate,
+        //     },
+        // })
+        // .select("EmployeeId Status Date Time Day")
+        // .populate({
+        //     path: "EmployeeId",
+        //     select: "Name",
+        //     match: {
+        //         SubCompany: mongoose.Types.ObjectId(req.body.company),
+        //     },
+        // }); 
+    //}
 
-    /*startDate = new Date("2020-09-01").toISOString();
-    endDate =  new Date("2020-09-30").toISOString();
-    console.log(startDate);
-    record = await attendeanceSchema.find({
-                    Date:
-                        {
-                            $lte: endDate,
-                            $gte: startDate
-                        }
-            }); */
+
+    if(startdate == "01/08/2020"|| startdate == "01/07/2020"){
+        if(startdate=="01/08/2020"){
+            enddate = "28/08/2020";
+        }
+        record = await attendeanceSchema.aggregate([
+            {
+                $match : {
+                    Date : {
+                        "$lte":enddate,
+                        "$gte":startdate
+                    },
+                }
+            },
+            {
+                $lookup:{
+                    from: "employees",
+                    localField: "EmployeeId",
+                    foreignField: "_id",
+                    as: "EmployeeId"
+                }
+            },
+            { "$unwind": "$EmployeeId" },
+            {
+                $match :{
+                    "EmployeeId.SubCompany":mongoose.Types.ObjectId(req.body.company),
+                }
+            }
+        ]);
+    }
+
+    
+    // startDate = new Date("2020-09-01").toISOString();
+    // endDate =  new Date("2020-09-30").toISOString();
+    // console.log(startDate);
+    // record = await attendeanceSchema.find({
+    //                 Date:
+    //                     {
+    //                         $lte: endDate,
+    //                         $gte: startDate
+    //                     }
+    //         }); 
+
     else{
         record = await attendeanceSchema
         .find({
@@ -1145,16 +1163,16 @@ router.post("/testing", async(req, res) => {
                 result.push(records);
             }
         });
-        // var memoresult = result;
         if (result.length >= 0) {
             var result = _.groupBy(result, "EmployeeId.Name");
             result = _.forEach(result, function(value, key) {
                 result[key] = _.groupBy(result[key], function(item) {
-                    if(startdate == "2020-08-01T00:00:00.000Z" || startdate=="2020-07-01T00:00:00.000Z"){
-                        return item.Date.split("T")[0];
-                    }
-                    else{
-                        return item.Date.toISOString().split('T')[0];
+                   
+                    if(startdate == "01/08/2020" || startdate=="01/07/2020"){
+                        //return item.Date.toISOString().split('T')[0];
+                        return item.Date;
+                    } else {
+                        return item.Date.toISOString().split("T")[0];
                     }
                 });
             });
@@ -1165,6 +1183,7 @@ router.post("/testing", async(req, res) => {
                     });
                 });
             });
+            //console.log(result);
             try {
                 var workbook = new Excel.Workbook();
                 var worksheet = workbook.addWorksheet("Attendance Report");
@@ -1191,7 +1210,7 @@ router.post("/testing", async(req, res) => {
                             employeedate[tempIndex] = tempkey;
                             tempIndex++;
                         }
-                    }     
+                    }   
                     for(var column = 1;column<=dateArray.length-1;column++){
                         worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
                     }
@@ -1203,17 +1222,18 @@ router.post("/testing", async(req, res) => {
                         if(dateArray.indexOf(key1)!=-1){  
                             for(var column = 1;column<=dateArray.length-1;column++){
                             //if(employeedate.findIndex(item => item == dateArray[column]) != -1){
-                                temp = key1.split("-");
-                                temp = temp[2];
+                                if(key1.includes("-")){
+                                     temp = key1.split("-")[2];
+                                } else{
+                                    temp = key1.split("/")[0];
+                                }
                                 worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+1)).value = "P";
                                 var i = 0;
                                 for(var key2 in result[key][key1]){
                                     if(key2 == "in"){
-                                        //console.log(result[key][key1][key2][0]['Time']);
                                         worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+2)).value = result[key][key1][key2][0]['Time'];
                                     }
                                     else if(key2 == "out" ){
-                                        //console.log(result[key][key1][key2][0]['Time']);
                                         worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+3)).value = result[key][key1][key2][0]['Time'];
                                     } 
                                     else if(i==2){
@@ -1221,12 +1241,12 @@ router.post("/testing", async(req, res) => {
                                     }
                                     i++; 
                                 }
-                            //}
+                            // }
                             // else if(employeedate.findIndex(item => item == dateArray[column]) == -1){
                             //     console.log("A");
                             //     worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
                             // }
-                            //column++;  
+                            // column++;  
                             
                            }
                         }
@@ -1406,56 +1426,56 @@ function dateISOformate(date){
 
 var dateArray = [];
 
-// var countDate  = function(mm,yyyy){
-//     var year=parseInt(yyyy);
-//     var months=parseInt(mm);
-//     var startdate;
-//     var enddate;
-//     if (
-//     months == 01 ||
-//     months == 03 ||
-//     months == 05 ||
-//     months == 07 ||
-//     months == 08 ||
-//     months == 10 ||
-//     months == 12
-//     ) {
-//     startdate = 01;
-//     enddate = 31;
-//     } else if (
-//     months == 04 ||
-//     months == 06 ||
-//     months == 09 ||
-//     months == 11
-//     ) {
-//     startdate = 01;
-//     enddate = 30;
-//     } else if (months == 02) {
-//     startdate = 01;
-//     if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
-//         enddate = 29;
-        
-//     } else {
-//         enddate = 28;
-//     }
-//     }
-//     for(var index=parseInt(startdate);index<=parseInt(enddate);index++){
-//         if(months>9 && index<=9){
-//             dateArray[index] = '0'+index+'/'+months+'/'+year
-//         }
-//         else if(months<=9 && index > 9){
-//             dateArray[index] = index+'/0'+months+'/'+year
-//         }
-//         else if(months<=9 && index <= 9){
-//             dateArray[index] = '0'+index+'/0'+months+'/'+year
-//         }
-//         else if(months>9 && index > 9){
-//             dateArray[index] = +index+'/'+months+'/'+year
-//         }
-//     }
-// }
-
 var countDate  = function(mm,yyyy){
+    var year=parseInt(yyyy);
+    var months=parseInt(mm);
+    var startdate;
+    var enddate;
+    if (
+    months == 01 ||
+    months == 03 ||
+    months == 05 ||
+    months == 07 ||
+    months == 08 ||
+    months == 10 ||
+    months == 12
+    ) {
+    startdate = 01;
+    enddate = 31;
+    } else if (
+    months == 04 ||
+    months == 06 ||
+    months == 09 ||
+    months == 11
+    ) {
+    startdate = 01;
+    enddate = 30;
+    } else if (months == 02) {
+    startdate = 01;
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        enddate = 29;
+        
+    } else {
+        enddate = 28;
+    }
+    }
+    for(var index=parseInt(startdate);index<=parseInt(enddate);index++){
+        if(months>9 && index<=9){
+            dateArray[index] = '0'+index+'/'+months+'/'+year
+        }
+        else if(months<=9 && index > 9){
+            dateArray[index] = index+'/0'+months+'/'+year
+        }
+        else if(months<=9 && index <= 9){
+            dateArray[index] = '0'+index+'/0'+months+'/'+year
+        }
+        else if(months>9 && index > 9){
+            dateArray[index] = +index+'/'+months+'/'+year
+        }
+    }
+}
+
+var countDateISO  = function(mm,yyyy){
     var year=parseInt(yyyy);
     var months=parseInt(mm);
     var startdate;
