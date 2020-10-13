@@ -331,42 +331,68 @@ router.post("/subcompany", function(req, res, next) {
 
 router.post("/employee", uplodEmp.single('employeeImage'), async function(req, res, next) {
     if (req.body.type == "insert") {
-        console.log(req.body);
         subcompanydetail = await subcompanySchema.findById(req.body.subcompany)
         .populate("CompanyId")
         .populate({
             path: "CompanyId",
             select: "Name"
         });
-        console.log(req.file.filename);
         var employeeCode = autogenerateID(req.body,subcompanydetail);
-        var record = new employeeSchema({
-            FirstName: req.body.firstname,
-            MiddleName: req.body.middlename,
-            LastName: req.body.lastname,
-            Name: req.body.firstname +
-                " " +
-                req.body.middlename +
-                " " +
-                req.body.lastname,
-            Gender: req.body.gender,
-            DOB: req.body.dob,
-            MartialStatus: req.body.martialstatus,
-            Mobile: req.body.mobile,
-            Mail: req.body.mail,
-            JoinDate: req.body.joindate,
-            ConfirmationDate: req.body.confirmationdate,
-            TerminationDate: req.body.terminationdate,
-            Prohibition: req.body.prohibition,
-            Idtype: req.body.idtype,
-            IDNumber: employeeCode,
-            Department: req.body.department,
-            Designation: req.body.designation,
-            SubCompany: req.body.subcompany,
-            Timing: req.body.timing,
-            Image : req.file.filename,
-        });
-        console.log(record);
+        var record;
+        if(req.file == null || req.file == undefined){
+            record = new employeeSchema({
+                FirstName: req.body.firstname,
+                MiddleName: req.body.middlename,
+                LastName: req.body.lastname,
+                Name: req.body.firstname +
+                    " " +
+                    req.body.middlename +
+                    " " +
+                    req.body.lastname,
+                Gender: req.body.gender,
+                DOB: req.body.dob,
+                MartialStatus: req.body.martialstatus,
+                Mobile: req.body.mobile,
+                Mail: req.body.mail,
+                JoinDate: req.body.joindate,
+                ConfirmationDate: req.body.confirmationdate,
+                TerminationDate: req.body.terminationdate,
+                Prohibition: req.body.prohibition,
+                Idtype: req.body.idtype,
+                IDNumber: employeeCode,
+                Department: req.body.department,
+                Designation: req.body.designation,
+                SubCompany: req.body.subcompany,
+                Timing: req.body.timing,
+            });
+        } else if(req.file != undefined){
+            record = new employeeSchema({
+                FirstName: req.body.firstname,
+                MiddleName: req.body.middlename,
+                LastName: req.body.lastname,
+                Name: req.body.firstname +
+                    " " +
+                    req.body.middlename +
+                    " " +
+                    req.body.lastname,
+                Gender: req.body.gender,
+                DOB: req.body.dob,
+                MartialStatus: req.body.martialstatus,
+                Mobile: req.body.mobile,
+                Mail: req.body.mail,
+                JoinDate: req.body.joindate,
+                ConfirmationDate: req.body.confirmationdate,
+                TerminationDate: req.body.terminationdate,
+                Prohibition: req.body.prohibition,
+                Idtype: req.body.idtype,
+                IDNumber: employeeCode,
+                Department: req.body.department,
+                Designation: req.body.designation,
+                SubCompany: req.body.subcompany,
+                Timing: req.body.timing,
+                Image : req.file.filename,
+            });
+        }
         record.save({}, function(err, record) {
             var result = {};
             if (err) {
@@ -470,52 +496,103 @@ router.post("/employee", uplodEmp.single('employeeImage'), async function(req, r
         }
         res.json(result);
     } else if (req.body.type == "update") {
-        employeeSchema.findByIdAndUpdate(
-            req.body.id, {
-                FirstName: req.body.firstname,
-                MiddleName: req.body.middlename,
-                LastName: req.body.lastname,
-                Name: req.body.firstname +
-                    " " +
-                    req.body.middlename +
-                    " " +
-                    req.body.lastname,
-                Gender: req.body.gender,
-                DOB: req.body.dob,
-                MartialStatus: req.body.martialstatus,
-                Mobile: req.body.mobile,
-                Mail: req.body.mail,
-                JoinDate: req.body.joindate,
-                ConfirmationDate: req.body.confirmationdate,
-                TerminationDate: req.body.terminationdate,
-                Prohibition: req.body.prohibition,
-                Idtype: req.body.idtype,
-                IDNumber: req.body.idnumber,
-                Department: req.body.department,
-                Designation: req.body.designation,
-                SubCompany: req.body.subcompany,
-                Timing: req.body.timing,
-            },
-            (err, record) => {
-                var result = {};
-                if (err) {
-                    result.Message = "Employee Not Updated";
-                    result.Data = err;
-                    result.isSuccess = false;
-                } else {
-                    if (record.length == 0) {
+        if(req.file == undefined){
+            employeeSchema.findByIdAndUpdate(
+                req.body.id, {
+                    FirstName: req.body.firstname,
+                    MiddleName: req.body.middlename,
+                    LastName: req.body.lastname,
+                    Name: req.body.firstname +
+                        " " +
+                        req.body.middlename +
+                        " " +
+                        req.body.lastname,
+                    Gender: req.body.gender,
+                    DOB: req.body.dob,
+                    MartialStatus: req.body.martialstatus,
+                    Mobile: req.body.mobile,
+                    Mail: req.body.mail,
+                    JoinDate: req.body.joindate,
+                    ConfirmationDate: req.body.confirmationdate,
+                    TerminationDate: req.body.terminationdate,
+                    Prohibition: req.body.prohibition,
+                    Idtype: req.body.idtype,
+                    IDNumber: req.body.idnumber,
+                    Department: req.body.department,
+                    Designation: req.body.designation,
+                    SubCompany: req.body.subcompany,
+                    Timing: req.body.timing,
+                },
+                (err, record) => {
+                    var result = {};
+                    if (err) {
                         result.Message = "Employee Not Updated";
-                        result.Data = [];
+                        result.Data = err;
                         result.isSuccess = false;
                     } else {
-                        result.Message = "Employee Updated";
-                        result.Data = record;
-                        result.isSuccess = true;
+                        if (record.length == 0) {
+                            result.Message = "Employee Not Updated";
+                            result.Data = [];
+                            result.isSuccess = false;
+                        } else {
+                            result.Message = "Employee Updated";
+                            result.Data = record;
+                            result.isSuccess = true;
+                        }
                     }
+                    res.json(result);
                 }
-                res.json(result);
-            }
-        );
+            );
+        } else if(req.file != undefined){
+            employeeSchema.findByIdAndUpdate(
+                req.body.id, {
+                    FirstName: req.body.firstname,
+                    MiddleName: req.body.middlename,
+                    LastName: req.body.lastname,
+                    Name: req.body.firstname +
+                        " " +
+                        req.body.middlename +
+                        " " +
+                        req.body.lastname,
+                    Gender: req.body.gender,
+                    DOB: req.body.dob,
+                    MartialStatus: req.body.martialstatus,
+                    Mobile: req.body.mobile,
+                    Mail: req.body.mail,
+                    JoinDate: req.body.joindate,
+                    ConfirmationDate: req.body.confirmationdate,
+                    TerminationDate: req.body.terminationdate,
+                    Prohibition: req.body.prohibition,
+                    Idtype: req.body.idtype,
+                    IDNumber: req.body.idnumber,
+                    Department: req.body.department,
+                    Designation: req.body.designation,
+                    SubCompany: req.body.subcompany,
+                    Timing: req.body.timing,
+                    Image : req.body.filename
+                },
+                (err, record) => {
+                    var result = {};
+                    if (err) {
+                        result.Message = "Employee Not Updated";
+                        result.Data = err;
+                        result.isSuccess = false;
+                    } else {
+                        if (record.length == 0) {
+                            result.Message = "Employee Not Updated";
+                            result.Data = [];
+                            result.isSuccess = false;
+                        } else {
+                            result.Message = "Employee Updated";
+                            result.Data = record;
+                            result.isSuccess = true;
+                        }
+                    }
+                    res.json(result);
+                }
+            );
+        }
+        
     }
 });
 
@@ -597,7 +674,6 @@ router.post("/beforeattendance", async  (req, res) => {
     attendeanceSchema.find(
       { EmployeeId: req.body.id, Date: date, Status: "in" },
       (err, record) => {
-          console.log(record);
         var result = {};
         if (err) {
           result.Message = "No Attendance Found";
@@ -1060,7 +1136,6 @@ router.post("/timing", (req, res) => {
     }
 });
 
-//Created by Dhanpal 30.09
 // Creating Report API 
 router.post("/testing", async(req, res) => {
     dateArray = [];
@@ -1524,7 +1599,6 @@ var countDateISO  = function(mm,yyyy){
     }
 }
 
-
 function autogenerateID(EmpDetails,CompanyDetail){
     //console.log(EmpDetails);
     //console.log(CompanyDetail.Name.replace(/\s/gi, "").toUpperCase().substr(0,3)+CompanyDetail.CompanyId.Name.replace(/\s/gi, "").toUpperCase().substr(0,3));
@@ -1730,15 +1804,17 @@ router.post("/testattendance", upload.single("attendance"), async function(req,r
     }
 });*/
 
-router.post("/changedate",async function(req,res){
-    var record = await backupattendace.find({Date:"08 07 2020"});
-    await backupattendace.updateMany({Date:"21/08/2020"},{Date:"2020-08-21T00:00:00.000Z"},(err,record)=>{
-        if (err) throw err;
-        else{
-            console.log(record);
-        }
-    });
-   res.json("updated");
-});
+
+//Api for testing purpose.
+// router.post("/changedate",async function(req,res){
+//     var record = await backupattendace.find({Date:"08 07 2020"});
+//     await backupattendace.updateMany({Date:"21/08/2020"},{Date:"2020-08-21T00:00:00.000Z"},(err,record)=>{
+//         if (err) throw err;
+//         else{
+//             console.log(record);
+//         }
+//     });
+//    res.json("updated");
+// });
 
 module.exports = router;
