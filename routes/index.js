@@ -36,7 +36,6 @@ function convertDateFormate(str) {
     return [day, mnth ,date.getFullYear()].join("/");
 }
   
-
 var attendImg = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, "uploads");
@@ -413,14 +412,12 @@ router.post("/employee", uplodEmp.single('employeeImage'), async function(req, r
             res.json(result);
         });
     } else if (req.body.type == "getdata") {
-        console.log(req.body);
         //var record = await employeeSchema.find({}).populate("SubCompany");
         var record = await employeeSchema.find({})
         .populate({
             path:"Timing",
             select:"StartTime EndTime"
         });
-        console.log(record);
         var result = {};
         if (record.length == 0) {
             result.Message = "Employee Not Found";
@@ -662,7 +659,6 @@ function getdate() {
     return attendance;
 }
 
-
 router.post("/beforeattendance", async  (req, res) => {
     var date = moment()
       .tz("Asia/Calcutta")
@@ -704,6 +700,7 @@ router.post("/beforeattendance", async  (req, res) => {
   });
   
 router.post("/attendance", upload.single("attendance"), async function(req,res,next) {
+    console.log("API Called");
     period = getdate();
     var date = moment()
       .tz("Asia/Calcutta")
@@ -712,8 +709,10 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
     date = date.split(" ");
     date = date[2]+ "-" + date[1] + "-" + date[0];
     if (req.body.type == "in") {
-        record = await attendeanceSchema.find({EmployeeId:req.body.employeeid, Date:date, Status:"in"});
-        if(record.length != 0){
+        console.log(req.body);
+        var data = await attendeanceSchema.find({EmployeeId:req.body.employeeid, Date:date, Status:"in"});
+        console.log(data);
+        if(data.length != 0){
             var result = {};
             result.Message = "Already Duty-In";
             result.Data = [];
@@ -730,6 +729,8 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                 req.body.latitude,
                 longlat[0]["SubCompany"].long
             );
+            console.log(longlat);
+            console.log(dist);
             var NAME = longlat[0]["SubCompany"].Name;
             var fd = dist * 1000;
             var area =
@@ -748,7 +749,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                 Image: req.file.filename,
                 Area: area,
             });
-        
+            console.log(record);
             record.save({}, function(err, record) {
                 var result = {};
                 console.log(err);
@@ -1484,6 +1485,93 @@ router.post("/getotp", (req, res) => {
     res.json(result);
 });
 
+router.post("/dashboard", async (req, res)=>{
+    if(req.body.type=="presentemployee"){
+        var date = new Date();
+        date = date.toISOString().split("T")[0];
+        attendeanceSchema.find({Date:date,Status:"in"},(err,record)=>{
+            var result = {};
+            if(err){
+                result.Message = "Record not found.";
+                result.Data = [];
+                result.isSuccess = false;
+            }else{
+                if(record.length == 0){
+                    result.Message = "Record not found.";
+                    result.Data = [];
+                    result.isSuccess = false;
+                }else{
+                    result.Message = "Record found.";
+                    result.Data = record.length;
+                    result.isSuccess = true;
+                }
+            }
+            res.json(result);
+        })
+    } else if(req.body.type == "totalemployee"){
+        employeeSchema.find({},(err,record)=>{
+            var result = {};
+            if(err){
+                result.Message = "Record not found.";
+                result.Data = [];
+                result.isSuccess = false;
+            }else{
+                if(record.length == 0){
+                    result.Message = "Record not found.";
+                    result.Data = [];
+                    result.isSuccess = false;
+                }else{
+                    result.Message = "Record found.";
+                    result.Data = record.length;
+                    result.isSuccess = true;
+                }
+            }
+            res.json(result);
+        })
+
+    } else if(req.body.type == "totalout"){
+        var date = new Date();
+        date = date.toISOString().split("T")[0];
+        attendeanceSchema.find({Date:date,Status:"out"},(err,record)=>{
+            var result = {};
+            if(err){
+                result.Message = "Record not found.";
+                result.Data = [];
+                result.isSuccess = false;
+            }else{
+                if(record.length == 0){
+                    result.Message = "Record not found.";
+                    result.Data = [];
+                    result.isSuccess = false;
+                }else{
+                    result.Message = "Record found.";
+                    result.Data = record.length;
+                    result.isSuccess = true;
+                }
+            }
+            res.json(result);
+        })
+
+     } //else if(req.body.type == "emplate"){
+    //       var date = new Date();
+    //       date = date.toISOString().split("T")[0];
+    //       var empAttendancedata = await attendeanceSchema.find({Date:date,Status:"in"}).populate({
+    //           path:"EmployeeId",
+    //           populate:{
+    //               path:"EmployeeId.Timing",
+    //               select:"StartTime"
+    //           }
+    //       });
+    //       console.log(empAttendancedata[index].Time )
+    //     //  for(var index = 0;index < empAttendancedata.length;index++){
+    //     //     //  if(empAttendancedata[index].Time >= empAttendancedata[index]){
+
+    //     //     //  }
+            
+    //     //  }   
+    // }
+});
+
 function calculateTime(inTime, outTime) {
     var startTime = moment(inTime, "HH:mm:ss a");
     var endTime = moment(outTime, "HH:mm:ss a");
@@ -1608,6 +1696,7 @@ function autogenerateID(EmpDetails,CompanyDetail){
     return employeecode;
 
 }
+
 /*
 router.post("/testattendance", upload.single("attendance"), async function(req,res,next) {
     period = getdate();
