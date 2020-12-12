@@ -4,11 +4,14 @@ var path = require("path");
 const multer = require("multer");
 var firebase = require("firebase-admin");
 var moment = require("moment-timezone");
+// var config = require("../config");
 var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
 var timingSchema = require("../models/timing.models");
+var adminSchema = require("../models/admin.models");
+var adduserSchema = require("../models/add_user.models");
 var backupattendace = require("../models/backupattendance.model");
 const mongoose = require("mongoose");
 var Excel = require("exceljs");
@@ -75,6 +78,114 @@ var empImg = multer.diskStorage({
 var upload = multer({ storage: attendImg });
 
 var uplodEmp = multer({ storage : empImg});
+
+router.post("/signup", async function (req, res, next) {
+    const { username, password } = req.body;
+    try {
+        var existAdmin = await adminSchema.find({
+            username: username.toLowerCase(),
+        });
+        if (existAdmin.length != 0) {
+            res.status(200).json({
+                Message: "username is already taken!",
+                Data: 0,
+                IsSuccess: true,
+            });
+        } else {
+            let newadmin = new adminSchema({
+                _id: new mongoose.Types.ObjectId(),
+                username: username.toLowerCase(),
+                password: password,
+            });
+            await newadmin.save();
+            res
+                .status(200)
+                .json({ Message: "new user registered!", Data: 0, IsSuccess: true });
+        }
+    } catch (err) {
+        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
+    }
+});
+
+router.post("/addUser", async function (req, res, next) {
+    const { username, password , firstname, lastname, Mobile, email,rights } = req.body;
+    try {
+        var existAdmin = await adduserSchema.find({
+            username: username.toLowerCase(),
+        });
+        if (existAdmin.length != 0) {
+            res.status(200).json({
+                Message: "username is already taken!",
+                Data: 0,
+                IsSuccess: true,
+            });
+        } else {
+            let newadmin = new adduserSchema({
+                _id: new mongoose.Types.ObjectId(),
+                username: username.toLowerCase(),
+                password: password,
+                firstname : firstname,
+                lastname : lastname,
+                Mobile : Mobile,
+                email : email,
+                rights : rights,
+            });
+            await newadmin.save();
+            res
+                .status(200)
+                .json({ Message: "new user Added!", Data: newadmin, IsSuccess: true });
+        }
+    } catch (err) {
+        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
+    }
+});
+
+router.post("/adminlogin", async function (req, res, next) {
+    const { username , password } = req.body;
+    console.log(req.body);
+    try {
+        var existAdmin = await adminSchema.find({
+            username : username,
+            password : password
+        });
+        if (existAdmin.length != 0) {
+            res
+                .status(200)
+                .json({ Message: "user found!", Data: existAdmin, IsSuccess: true });
+        } else {
+            res.status(200).json({
+                Message: "user not found!",
+                Data: existAdmin,
+                IsSuccess: true,
+            });
+        }
+    } catch (err) {
+        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
+    }
+});
+
+router.post("/deleteEmp", async function (req, res, next) {
+    const { _id } = req.body;
+    try {
+        var emp = await employeeSchema.findByIdAndDelete(_id);
+        if( emp != null){
+            res
+                .status(200)
+                .json({ Message: "User Deleted!", Data: 1, IsSuccess: true });
+        }
+        else {
+            res.status(200).json({
+                Message: "user not found!",
+                Data: 0,
+                IsSuccess: true,
+            });
+        }
+    }
+    catch (err) {
+        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
+    }
+
+});
 
 router.post("/company", function(req, res, next) {
     if (req.body.type == "insert") {
