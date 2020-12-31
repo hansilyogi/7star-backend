@@ -20,6 +20,10 @@ const { json } = require("express");
 const { stringify } = require("querystring");
 const geolib = require("geolib");
 
+router.get('/', function(req, res, next) {
+    res.render('index', { title: '7 STAR' });
+  });
+
 var cellArray = [];
 function str(i){
     return i<0 ? "" : str(i/26-1)+String.fromCharCode(65+i%26);
@@ -1513,13 +1517,17 @@ function convertStringDateToISO(date){
     let day;
     let month;
     let year;
+    // if(list[0] <10){
+        // list[0] = "0"+list[0];
+        console.log(list[0]);
+    // }
     // if(parseInt(list[0])<10){
     //     day = "0" +list[0];
     // }
     // console.log(list[0]);
    
-    let dISO = list[2] + "-" + list[1] + "-" + String(list[0]) + "T" + "00:00:00.00Z";
-    // console.log(dISO);
+    let dISO = list[2] + "-" + list[1] + "-" + list[0] + "T" + "00:00:00.00Z";
+    console.log("Date----------"+dISO);
     return dISO;
 }
 
@@ -1550,15 +1558,16 @@ router.post("/getEmpAttendance", async function(req,res,next){
         // console.log("j :"+d1List[0]);
         // console.log("j :"+d2List[0]);
 
-        console.log(convertStringDateToISO(date));
-        console.log(convertStringDateToISOPlusOne(date));
         let ofDate1 = convertStringDateToISO(date);
         let ofDate2 = convertStringDateToISOPlusOne(date);
         let datelast = convertStringDateToISO(date2);
 
+        console.log("ISO Date - 1-----------"+ofDate1);
+        console.log("ISO Date - 2-----------"+datelast);
+
         let diff = daysBetween(ofDate1,datelast);
         diff = diff +1;
-        console.log(diff);
+        console.log("difference -------------"+diff);
 
         let recordIn = await attendeanceSchema.find({
                                             // EmployeeId: empId,
@@ -1570,14 +1579,19 @@ router.post("/getEmpAttendance", async function(req,res,next){
                                         })
                                         .populate({
                                             path: "EmployeeId",
-                                            select : "Name"
-                                        });
+                                            select : "Name",
+                                            populate:{
+                                                path : "Timing",
+                                                select : "Name"
+                                            }
+                                        })
+                                        ;
         let recordOut = await attendeanceSchema.find({
             // EmployeeId: empId,
             Status: "out",
             Date : {
                 $gte : ofDate1,
-                $lt : ofDate2
+                $lt : datelast
             },
         });
 
