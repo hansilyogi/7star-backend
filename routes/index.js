@@ -4,14 +4,11 @@ var path = require("path");
 const multer = require("multer");
 var firebase = require("firebase-admin");
 var moment = require("moment-timezone");
-// var config = require("../config");
 var companySchema = require("../models/company.models");
 var subcompanySchema = require("../models/subcompany.models");
 var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
 var timingSchema = require("../models/timing.models");
-var adminSchema = require("../models/admin.models");
-var adduserSchema = require("../models/add_user.models");
 var backupattendace = require("../models/backupattendance.model");
 const mongoose = require("mongoose");
 var Excel = require("exceljs");
@@ -21,8 +18,7 @@ var formidable = require('formidable');
 const { runInNewContext } = require("vm");
 const { json } = require("express");
 const { stringify } = require("querystring");
-
-
+const geolib = require("geolib");
 
 var cellArray = [];
 function str(i){
@@ -38,7 +34,7 @@ function convertDateFormate(str) {
       day = ("0" + date.getDate()).slice(-2);
     return [day, mnth ,date.getFullYear()].join("/");
 }
-  
+ 
 var attendImg = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, "uploads");
@@ -78,114 +74,6 @@ var empImg = multer.diskStorage({
 var upload = multer({ storage: attendImg });
 
 var uplodEmp = multer({ storage : empImg});
-
-router.post("/signup", async function (req, res, next) {
-    const { username, password } = req.body;
-    try {
-        var existAdmin = await adminSchema.find({
-            username: username.toLowerCase(),
-        });
-        if (existAdmin.length != 0) {
-            res.status(200).json({
-                Message: "username is already taken!",
-                Data: 0,
-                IsSuccess: true,
-            });
-        } else {
-            let newadmin = new adminSchema({
-                _id: new mongoose.Types.ObjectId(),
-                username: username.toLowerCase(),
-                password: password,
-            });
-            await newadmin.save();
-            res
-                .status(200)
-                .json({ Message: "new user registered!", Data: 0, IsSuccess: true });
-        }
-    } catch (err) {
-        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
-    }
-});
-
-router.post("/addUser", async function (req, res, next) {
-    const { username, password , firstname, lastname, Mobile, email,rights } = req.body;
-    try {
-        var existAdmin = await adduserSchema.find({
-            username: username.toLowerCase(),
-        });
-        if (existAdmin.length != 0) {
-            res.status(200).json({
-                Message: "username is already taken!",
-                Data: 0,
-                IsSuccess: true,
-            });
-        } else {
-            let newadmin = new adduserSchema({
-                _id: new mongoose.Types.ObjectId(),
-                username: username.toLowerCase(),
-                password: password,
-                firstname : firstname,
-                lastname : lastname,
-                Mobile : Mobile,
-                email : email,
-                rights : rights,
-            });
-            await newadmin.save();
-            res
-                .status(200)
-                .json({ Message: "new user Added!", Data: newadmin, IsSuccess: true });
-        }
-    } catch (err) {
-        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
-    }
-});
-
-router.post("/adminlogin", async function (req, res, next) {
-    const { username , password } = req.body;
-    console.log(req.body);
-    try {
-        var existAdmin = await adminSchema.find({
-            username : username,
-            password : password
-        });
-        if (existAdmin.length != 0) {
-            res
-                .status(200)
-                .json({ Message: "user found!", Data: existAdmin, IsSuccess: true });
-        } else {
-            res.status(200).json({
-                Message: "user not found!",
-                Data: existAdmin,
-                IsSuccess: true,
-            });
-        }
-    } catch (err) {
-        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
-    }
-});
-
-router.post("/deleteEmp", async function (req, res, next) {
-    const { _id } = req.body;
-    try {
-        var emp = await employeeSchema.findByIdAndDelete(_id);
-        if( emp != null){
-            res
-                .status(200)
-                .json({ Message: "User Deleted!", Data: 1, IsSuccess: true });
-        }
-        else {
-            res.status(200).json({
-                Message: "user not found!",
-                Data: 0,
-                IsSuccess: true,
-            });
-        }
-    }
-    catch (err) {
-        res.status(500).json({ Message: err.message, Data: 0, IsSuccess: false });
-    }
-
-});
 
 router.post("/company", function(req, res, next) {
     if (req.body.type == "insert") {
@@ -700,7 +588,7 @@ router.post("/employee", uplodEmp.single('employeeImage'), async function(req, r
                 }
             );
         }
-        
+       
     }
 });
 
@@ -728,26 +616,48 @@ router.post("/login", function(req, res, next) {
     }
 });
 
-function calculatedistance(plon1, plon2, plat1, plat2) {
-    lon1 = plon1;
-    lon2 = plon2;
-    lat1 = plat1;
-    lat2 = plat2;
-    var radlat1 = (Math.PI * lat1) / 180;
-    var radlat2 = (Math.PI * lat2) / 180;
-    var theta = lon1 - lon2;
-    var radtheta = (Math.PI * theta) / 180;
-    var dist =
-        Math.sin(radlat1) * Math.sin(radlat2) +
-        Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-    if (dist > 1) {
-        dist = 1;
+// function calculatedistance(plon1, plon2, plat1, plat2) {
+//     lon1 = plon1;
+//     lon2 = plon2;
+//     lat1 = plat1;
+//     lat2 = plat2;
+//     var radlat1 = (Math.PI * lat1) / 180;
+//     var radlat2 = (Math.PI * lat2) / 180;
+//     var theta = lon1 - lon2;
+//     var radtheta = (Math.PI * theta) / 180;
+//     var dist =
+//         Math.sin(radlat1) * Math.sin(radlat2) +
+//         Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+//     if (dist > 1) {
+//         dist = 1;
+//     }
+//     dist = Math.acos(dist);
+//     dist = (dist * 180) / Math.PI;
+//     dist = dist * 60 * 1.1515;
+//     dist = dist * 1.609344;
+//     return dist;
+// }
+
+function calculatelocation(lat1, long1, lat2, long2) {
+    if (lat1 == 0 || long1 == 0) {
+      area = 1; // Company Lat and Long is not defined.
+    } else {
+      const location1 = {
+        lat: parseFloat(lat1),
+        lon: parseFloat(long1),
+      };
+      const location2 = {
+        lat: parseFloat(lat2),
+        lon: parseFloat(long2),
+      };
+      heading = geolib.getDistance(location1, location2);
+      if (!isNaN(heading)) {
+          return heading;
+      } else {
+        heading =  -1; //  Lat and Long is not defined.
     }
-    dist = Math.acos(dist);
-    dist = (dist * 180) / Math.PI;
-    dist = dist * 60 * 1.1515;
-    dist = dist * 1.609344;
-    return dist;
+    return heading;
+  }
 }
 
 function getdate() {
@@ -809,7 +719,7 @@ router.post("/beforeattendance", async  (req, res) => {
       }
     );
   });
-  
+ 
 router.post("/attendance", upload.single("attendance"), async function(req,res,next) {
     console.log("API Called");
     period = getdate();
@@ -834,16 +744,30 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
             var longlat = await employeeSchema
                 .find({ _id: req.body.employeeid })
                 .populate("SubCompany");
-            dist = calculatedistance(
-                req.body.longitude,
-                longlat[0]["SubCompany"].lat,
-                req.body.latitude,
-                longlat[0]["SubCompany"].long
-            );
-            console.log(longlat);
-            console.log(dist);
+            // dist = calculatedistance(
+            //     req.body.longitude,
+            //     longlat[0]["SubCompany"].lat,
+            //     req.body.latitude,
+            //     longlat[0]["SubCompany"].long
+            // );
+            let reqlat = parseFloat(req.body.latitude);
+            let reqlong = parseFloat(req.body.longitude);
+
+            let attendanceLat = parseFloat(longlat[0]["SubCompany"].lat);
+            let attendanceLong = parseFloat(longlat[0]["SubCompany"].long);
+
+            console.log(reqlat);
+            console.log(reqlong);
+            console.log(attendanceLat);
+            console.log(attendanceLong);
+
+            dist = calculatelocation(reqlat,reqlong,attendanceLat,attendanceLong);
+            console.log("Dist---------------------------------: " +dist);
+
+            // console.log(longlat);
+            // console.log(dist);
             var NAME = longlat[0]["SubCompany"].Name;
-            var fd = dist * 1000;
+            var fd = dist;
             var area =
                 fd > 100 ?
                 "http://www.google.com/maps/place/" +
@@ -851,36 +775,41 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                 "," +
                 req.body.longitude :
                 NAME;
-            var record = attendeanceSchema({
-                EmployeeId: req.body.employeeid,
-                Status: req.body.type,
-                Date: date,
-                Time: period.time,
-                Day: period.day,
-                Image: req.file.filename,
-                Area: area,
-            });
-            console.log(record);
-            record.save({}, function(err, record) {
-                var result = {};
-                console.log(err);
-                if (err) {
-                    result.Message = "Attendance Not Marked";
-                    result.Data = [];
-                    result.isSuccess = false;
-                } else {
-                    if (record.length == 0) {
+
+            if(dist < 100){
+                var record = await new attendeanceSchema({
+                    EmployeeId: req.body.employeeid,
+                    Status: req.body.type,
+                    Date: date,
+                    Time: period.time,
+                    Day: period.day,
+                    Image: req.file.filename,
+                    Area: area,
+                });
+                console.log("Record Check :"+record);
+                record.save({}, function(err, record) {
+                    var result = {};
+                    console.log(err);
+                    if (err) {
                         result.Message = "Attendance Not Marked";
                         result.Data = [];
                         result.isSuccess = false;
                     } else {
-                        result.Message = "Attendance Marked";
-                        result.Data = [record];
-                        result.isSuccess = true;
+                        if (record.length == 0) {
+                            result.Message = "Attendance Not Marked";
+                            result.Data = [];
+                            result.isSuccess = false;
+                        } else {
+                            result.Message = "Attendance Marked";
+                            result.Data = [record];
+                            result.isSuccess = true;
+                        }
                     }
-                }
-                res.json(result);
-            });
+                    res.json(result);
+                });
+            }else{
+                res.status(200).json({ isSuccess: true , Message: "Attendance Cant Mark in out of Area" });
+            }
         }
     }
     else if (req.body.type == "out") {
@@ -944,7 +873,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
             });
         }
     }
-        
+       
     /*if (req.body.type == "in") {
         var longlat = await employeeSchema
             .find({ _id: req.body.employeeid })
@@ -1248,7 +1177,7 @@ router.post("/timing", (req, res) => {
     }
 });
 
-// Creating Report API 
+// Creating Report API
 router.post("/testing", async(req, res) => {
     dateArray = [];
     var record;
@@ -1257,12 +1186,12 @@ router.post("/testing", async(req, res) => {
     } else {
         countDateISO(req.body.month, req.body.year);
     }
-    
+   
     startdate = dateArray[1];
     enddate = dateArray[dateArray.length-1];
     //data is not proper so, I use this method.
-    
-      
+   
+     
     // if(startdate == "2020-08-01" && enddate == "2020-08-31" || startdate == "2020-07-01" && enddate == "2020-07-31"){
         // startdate = startdate+"T00:00:00.000Z";
         // enddate = enddate+"T00:00:00.000Z";
@@ -1280,7 +1209,7 @@ router.post("/testing", async(req, res) => {
         //     match: {
         //         SubCompany: mongoose.Types.ObjectId(req.body.company),
         //     },
-        // }); 
+        // });
     //}
 
 
@@ -1314,7 +1243,7 @@ router.post("/testing", async(req, res) => {
         ]);
     }
 
-    
+   
     // startDate = new Date("2020-09-01").toISOString();
     // endDate =  new Date("2020-09-30").toISOString();
     // console.log(startDate);
@@ -1324,7 +1253,7 @@ router.post("/testing", async(req, res) => {
     //                         $lte: endDate,
     //                         $gte: startDate
     //                     }
-    //         }); 
+    //         });
 
     else{
         record = await attendeanceSchema
@@ -1397,7 +1326,7 @@ router.post("/testing", async(req, res) => {
                             employeedate[tempIndex] = tempkey;
                             tempIndex++;
                         }
-                    }   
+                    }  
                     for(var column = 1;column<=dateArray.length-1;column++){
                         worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
                     }
@@ -1422,11 +1351,11 @@ router.post("/testing", async(req, res) => {
                                     }
                                     else if(key2 == "out" ){
                                         worksheet.getCell(cellArray[2+parseInt(temp)]+parseInt(rowIndex+3)).value = result[key][key1][key2][0]['Time'];
-                                    } 
+                                    }
                                     else if(i==2){
                                         break;
                                     }
-                                    i++; 
+                                    i++;
                                 }
                             // }
                             // else if(employeedate.findIndex(item => item == dateArray[column]) == -1){
@@ -1434,7 +1363,7 @@ router.post("/testing", async(req, res) => {
                             //     worksheet.getCell(cellArray[2+parseInt(column)]+parseInt(rowIndex+1)).value = "A";
                             // }
                             // column++;  
-                            
+                           
                            }
                         }
                     }
@@ -1443,9 +1372,9 @@ router.post("/testing", async(req, res) => {
                 }
                 worksheet.getCell('A'+parseInt(rowIndex+5)).value = "P => Present";
                 worksheet.getCell('A'+parseInt(rowIndex+6)).value = "A => Absent";
-                
+               
                 /* var worksheet1 = workbook.addWorksheet("Memo Report");
-                worksheet.getRow(5).values = ['Employee Name', 'Date', 'Day', 'Status','In Time', 'Out Time', 'Total Working Hour'];     
+                worksheet.getRow(5).values = ['Employee Name', 'Date', 'Day', 'Status','In Time', 'Out Time', 'Total Working Hour'];    
                 worksheet.columns = [
                     { key: "Name", width: 32 },
                     { key: "Date", width: 32 },
@@ -1454,11 +1383,11 @@ router.post("/testing", async(req, res) => {
                     { key: "InTime", width: 15 },
                     { key: "OutTime", width: 15 },
                     {
-                        
+                       
                         key: "DifferenceTime",
                         width: 28,
                     },
-                ]; */   
+                ]; */  
                 /*worksheet.columns = [
                     { header: "Employee Name", key: "Name", width: 32 },
                     { header: "Date", key: "Date", width: 32 },
@@ -1576,6 +1505,124 @@ router.post("/testing", async(req, res) => {
     }
 });
 
+function convertStringDateToISO(date){
+    var dateList = date;
+    // console.log(dateList.split("/"));
+    let list = dateList.split("/");
+
+    let day;
+    let month;
+    let year;
+    // if(parseInt(list[0])<10){
+    //     day = "0" +list[0];
+    // }
+    // console.log(list[0]);
+   
+    let dISO = list[2] + "-" + list[1] + "-" + String(list[0]) + "T" + "00:00:00.00Z";
+    // console.log(dISO);
+    return dISO;
+}
+
+function convertStringDateToISOPlusOne(date){
+    var dateList = date;
+    // console.log(dateList.split("/"));
+    let list = dateList.split("/");
+    let datee = parseFloat(list[0]) + 1;
+   
+    let dISO = list[2] + "-" + list[1] + "-" + datee + "T" + "00:00:00.00Z";
+    // console.log(dISO);
+    return dISO;
+}
+
+function daysBetween(date1String, date2String){
+    var d1 = new Date(date1String);
+    var d2 = new Date(date2String);
+    return (d2-d1)/(1000*3600*24);
+}
+
+router.post("/getEmpAttendance", async function(req,res,next){
+    const { date , date2 } = req.body;
+    try {
+
+        // let d1List = date.split("/");
+        // let d2List = date2.split("/");
+
+        // console.log("j :"+d1List[0]);
+        // console.log("j :"+d2List[0]);
+
+        console.log(convertStringDateToISO(date));
+        console.log(convertStringDateToISOPlusOne(date));
+        let ofDate1 = convertStringDateToISO(date);
+        let ofDate2 = convertStringDateToISOPlusOne(date);
+        let datelast = convertStringDateToISO(date2);
+
+        let diff = daysBetween(ofDate1,datelast);
+        diff = diff +1;
+        console.log(diff);
+
+        let recordIn = await attendeanceSchema.find({
+                                            // EmployeeId: empId,
+                                            Status: "in",
+                                            Date : {
+                                                $gte : ofDate1,
+                                                $lte : datelast
+                                            },
+                                        })
+                                        .populate({
+                                            path: "EmployeeId",
+                                            select : "Name"
+                                        });
+        let recordOut = await attendeanceSchema.find({
+            // EmployeeId: empId,
+            Status: "out",
+            Date : {
+                $gte : ofDate1,
+                $lt : ofDate2
+            },
+        });
+
+        console.log(recordIn.length);
+        console.log(recordOut.length);
+
+        let dutyInOut = [];
+        for(let i=0;i<recordIn.length;i++){
+            let dutyInRecord = recordIn[i];
+           
+            let outRecord = await attendeanceSchema.find({
+                EmployeeId: dutyInRecord.EmployeeId,
+                Date: dutyInRecord.Date,
+                Status : "out",
+                Day : dutyInRecord.Day,
+            })
+            var listIs = {};
+            if(outRecord.length > 0){
+                listIs = {
+                    DutyIn : dutyInRecord,
+                    DutyOut : outRecord
+                }
+                // dutyInOut.push(listIs);
+            }else{
+                listIs = {
+                    DutyIn: dutyInRecord,
+                    DutyOut : " "
+                }
+            }
+            dutyInOut.push(listIs);
+            // console.log(outRecord);
+            // if(outRecord);
+            // console.log(dutyInRecord.EmployeeId);
+            // console.log(dutyInRecord.length);
+        }
+        if(dutyInOut.length > 0){
+            res.status(200).json({ isSuccess: true ,DaysCount : diff, Count: dutyInOut.length ,Data: dutyInOut , Message: "Employee Data Found" });
+        }else{
+            res.status(200).json({ isSuccess: true , Data: 0 , Message: "Employee Data Not Found" });
+        }
+    } catch (error) {
+        res.status(500).json({ isSuccess: false , Message: error.message })
+    }
+});
+
 function secondsToHms(d) {
     d = Number(d);
     var h = Math.floor(d / 3600);
@@ -1678,8 +1725,8 @@ router.post("/dashboard", async (req, res)=>{
     //     //     //  if(empAttendancedata[index].Time >= empAttendancedata[index]){
 
     //     //     //  }
-            
-    //     //  }   
+           
+    //     //  }  
     // }
 });
 
@@ -1728,7 +1775,7 @@ var countDate  = function(mm,yyyy){
     startdate = 01;
     if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
         enddate = 29;
-        
+       
     } else {
         enddate = 28;
     }
@@ -1777,7 +1824,7 @@ var countDateISO  = function(mm,yyyy){
     startdate = 01;
     if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
         enddate = 29;
-        
+       
     } else {
         enddate = 28;
     }
