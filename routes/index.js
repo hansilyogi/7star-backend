@@ -19,6 +19,7 @@ const { runInNewContext } = require("vm");
 const { json } = require("express");
 const { stringify } = require("querystring");
 const geolib = require("geolib");
+const { populate } = require("../models/company.models");
 
 router.get('/', function(req, res, next) {
     res.render('index', { title: '7 STAR' });
@@ -780,7 +781,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                 req.body.longitude :
                 NAME;
 
-            if(dist < 100){
+            if(dist < 100 && dist != -1){
                 var record = await new attendeanceSchema({
                     EmployeeId: req.body.employeeid,
                     Status: req.body.type,
@@ -812,7 +813,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                     res.json(result);
                 });
             }else{
-                res.status(200).json({ isSuccess: true , Message: "Attendance Cant Mark in out of Area" });
+                res.status(200).json({ isSuccess: true ,Data : [], Message: "Attendance Cant Mark in out of Area" });
             }
         }
     }
@@ -1549,28 +1550,24 @@ function daysBetween(date1String, date2String){
 }
 
 router.post("/getEmpAttendance", async function(req,res,next){
-    const { date , date2 } = req.body;
+    const { date , date2, SubCompany } = req.body;
     try {
-
-        // let d1List = date.split("/");
-        // let d2List = date2.split("/");
-
-        // console.log("j :"+d1List[0]);
-        // console.log("j :"+d2List[0]);
 
         let ofDate1 = convertStringDateToISO(date);
         let ofDate2 = convertStringDateToISOPlusOne(date);
         let datelast = convertStringDateToISO(date2);
 
-        console.log("ISO Date - 1-----------"+ofDate1);
-        console.log("ISO Date - 2-----------"+datelast);
-
         let diff = daysBetween(ofDate1,datelast);
         diff = diff +1;
-        console.log("difference -------------"+diff);
+
+        let EmployeeOfSubCompany = await employeeSchema.find({ SubCompany: SubCompany });
+        let employeeIds = [];
+        for(let i=0;i<EmployeeOfSubCompany.length;i++){
+            employeeIds.push(EmployeeOfSubCompany[i]._id);
+        }
 
         let recordIn = await attendeanceSchema.find({
-                                            // EmployeeId: empId,
+                                            EmployeeId: { $in : employeeIds },
                                             Status: "in",
                                             Date : {
                                                 $gte : ofDate1,
@@ -1579,9 +1576,13 @@ router.post("/getEmpAttendance", async function(req,res,next){
                                         })
                                         .populate({
                                             path: "EmployeeId",
-                                            select : "Name",
+                                            select : "Name SubCompany",
                                             populate:{
                                                 path : "Timing",
+                                                select : "Name"
+                                            },
+                                            populate:{
+                                                path : "SubCompany",
                                                 select : "Name"
                                             }
                                         })
@@ -1628,7 +1629,7 @@ router.post("/getEmpAttendance", async function(req,res,next){
             // console.log(dutyInRecord.length);
         }
         if(dutyInOut.length > 0){
-            res.status(200).json({ isSuccess: true ,DaysCount : diff, Count: dutyInOut.length ,Data: dutyInOut , Message: "Employee Data Found" });
+            res.status(200).json({ isSuccess: true, empcount : employeeIds ,DaysCount : diff, Count: dutyInOut.length ,Data: dutyInOut , Message: "Employee Data Found" });
         }else{
             res.status(200).json({ isSuccess: true , Data: 0 , Message: "Employee Data Not Found" });
         }
