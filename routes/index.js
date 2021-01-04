@@ -813,7 +813,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                     res.json(result);
                 });
             }else{
-                res.status(200).json({ isSuccess: true ,Data : [], Message: "Attendance Cant Mark in out of Area" });
+                res.status(200).json({ isSuccess: true ,Data : [], Message: "Attendance Can't Mark outside of Office Area" });
             }
         }
     }
@@ -830,12 +830,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
             var longlat = await employeeSchema
             .find({ _id: req.body.employeeid })
             .populate("SubCompany");
-            dist = calculatedistance(
-                req.body.longitude,
-                longlat[0]["SubCompany"].lat,
-                req.body.latitude,
-                longlat[0]["SubCompany"].long
-            );
+            dist = calculatelocation(req.body.latitude,req.body.longitude,longlat[0]["SubCompany"].lat,longlat[0]["SubCompany"].long);
             console.log(dist);
             var NAME = longlat[0]["SubCompany"].Name;
             var fd = dist * 1000;
