@@ -10,6 +10,7 @@ var employeeSchema = require("../models/employee.model");
 var attendeanceSchema = require("../models/attendance.models");
 var timingSchema = require("../models/timing.models");
 var backupattendace = require("../models/backupattendance.model");
+var latlongSchema = require("../models/latlongModel");
 const mongoose = require("mongoose");
 var Excel = require("exceljs");
 var _ = require("lodash");
@@ -621,27 +622,22 @@ router.post("/login", function(req, res, next) {
     }
 });
 
-// function calculatedistance(plon1, plon2, plat1, plat2) {
-//     lon1 = plon1;
-//     lon2 = plon2;
-//     lat1 = plat1;
-//     lat2 = plat2;
-//     var radlat1 = (Math.PI * lat1) / 180;
-//     var radlat2 = (Math.PI * lat2) / 180;
-//     var theta = lon1 - lon2;
-//     var radtheta = (Math.PI * theta) / 180;
-//     var dist =
-//         Math.sin(radlat1) * Math.sin(radlat2) +
-//         Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-//     if (dist > 1) {
-//         dist = 1;
-//     }
-//     dist = Math.acos(dist);
-//     dist = (dist * 180) / Math.PI;
-//     dist = dist * 60 * 1.1515;
-//     dist = dist * 1.609344;
-//     return dist;
-// }
+router.post("/subaddres", async function(req,res,next){
+    const {subcompany,lat,long,address} = req.body;
+    try{
+        var newdata = await new latlongSchema({
+            subcompany : subcompany,
+            lat : lat,
+            long : long,
+            address : address
+        });
+        newdata.save();
+        res.status(200).json({IsSuccess : true, Data : [newdata], Message : "Data Inserted"});
+    }
+    catch(err){
+        res.status(500).json({IsSuccess : false, Message : err.message , Data : []})
+    }
+});
 
 function calculatelocation(lat1, long1, lat2, long2) {
     if (lat1 == 0 || long1 == 0) {
