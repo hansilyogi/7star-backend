@@ -21,6 +21,7 @@ const { json } = require("express");
 const { stringify } = require("querystring");
 const geolib = require("geolib");
 const { populate } = require("../models/company.models");
+const { result } = require("lodash");
 
 router.get('/', function(req, res, next) {
     res.render('index', { title: '7 STAR' });
@@ -422,6 +423,9 @@ router.post("/employee", uplodEmp.single('employeeImage'), async function(req, r
         .populate({
             path:"Timing",
             select:"StartTime EndTime"
+        })
+        .populate({
+            path : "SubCompany"
         });
         var result = {};
         if (record.length == 0) {
@@ -975,6 +979,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
         const edate = req.body.ed == "" ? undefined : req.body.ed;
         const area = req.body.afilter;
         const status = req.body.status;
+        console.log("Req Body : "+req.body);
         let query = {};
         if (req.body.rm == 0) {
             if (day) {
@@ -1649,51 +1654,93 @@ router.post("/getotp", (req, res) => {
     res.json(result);
 });
 
+router.post("/delEmpolyee", async function(req,res,next){
+    const id = req.body.id;
+    try{
+        var data = await employeeSchema.find({_id : id});
+        if(data.length == 0 ){
+            res.status(200).json({IsSuccess : true, Data : 0, Message : "No Record Found"});
+        }
+        else{
+            var x = await employeeSchema.findOneAndDelete({_id : id});
+            res.status(200).json({IsSuccess : true, Data : 1, Message : "Record Deleted"});
+        }
+    }
+    catch(err){
+        res.status(500).json({IsSuccess : false, Data : 0, Message : err.message});
+    }
+});
+
 router.post("/dashboard", async (req, res)=>{
     if(req.body.type=="presentemployee"){
         var date = new Date();
         date = date.toISOString().split("T")[0];
-        attendeanceSchema.find({Date:date,Status:"in"},(err,record)=>{
-            var result = {};
-            if(err){
-                result.Message = "Record not found.";
-                result.Data = [];
-                result.isSuccess = false;
-            }else{
-                if(record.length == 0){
-                    result.Message = "Record not found.";
-                    result.Data = [];
-                    result.isSuccess = false;
-                }else{
-                    result.Message = "Record found.";
-                    result.Data = record.length;
-                    result.isSuccess = true;
-                }
+        var record = await attendeanceSchema.find({Date:date,Status:"in"}).populate({
+                                            path : "EmployeeId",
+                                            select : "Name Mobile"
+                                        });
+            if(!record){
+                res.status(200).json({Message : "Record not found." , Data : [], isSuccess : false});
             }
-            res.json(result);
-        })
+            else{
+                res.status(200).json({Message : "Record found." , Data : record, isSuccess : true});
+            }
     } else if(req.body.type == "totalemployee"){
-        employeeSchema.find({},(err,record)=>{
-            var result = {};
-            if(err){
-                result.Message = "Record not found.";
-                result.Data = [];
-                result.isSuccess = false;
-            }else{
-                if(record.length == 0){
-                    result.Message = "Record not found.";
-                    result.Data = [];
-                    result.isSuccess = false;
-                }else{
-                    result.Message = "Record found.";
-                    result.Data = record.length;
-                    result.isSuccess = true;
-                }
+        var record = await employeeSchema.find();
+        try{
+            if(!record){
+                res.status(200).json({IsSuccess : true, Data : [], Message : "Record Not Found"});
             }
-            res.json(result);
-        })
+            else{
+                res.status(200).json({IsSuccess : true, Data : record, Message : "Record Found"});
+            }
+        }
+        catch(err){
+            res.status(500).json({IsSuccess : false, Data : 0, Message : err.message});
+        }
+    } else if(req.body.type == "totalabsent"){
+        var empid =[];
+        var predata =[];
+        var date = new Date();
+        date = date.toISOString().split("T")[0];
 
-    } else if(req.body.type == "totalout"){
+        var record = await employeeSchema.find().populate({
+                                            path : "EmployeeId"
+                                        });
+        for(i=0;i<record.length;i++){
+            empid[i] = record[i]._id;
+        }
+
+        var attdata = await attendeanceSchema.find({Date : date, Status : "in"});
+        for(j=0; j<attdata.length; j++){
+            predata[j] = attdata[j]._id;
+        }
+        
+        // console.log(empid);
+        res.status(200).json({IsSuccess : true ,Count : attdata.length,  Data : predata});
+
+    }
+        // employeeSchema.find({},(err,record)=>{
+        //     var result = {};
+        //     if(err){
+        //         result.Message = "Record not found.";
+        //         result.Data = [];
+        //         result.isSuccess = false;
+        //     }else{
+        //         if(record.length == 0){
+        //             result.Message = "Record not found.";
+        //             result.Data = [];
+        //             result.isSuccess = false;
+        //         }else{
+        //             result.Message = "Record found.";
+        //             result.Data = record.length;
+        //             result.isSuccess = true;
+        //         }
+        //     }
+        //     res.json(result);
+        // })
+
+    else if(req.body.type == "totalout"){
         var date = new Date();
         date = date.toISOString().split("T")[0];
         attendeanceSchema.find({Date:date,Status:"out"},(err,record)=>{
@@ -1709,14 +1756,15 @@ router.post("/dashboard", async (req, res)=>{
                     result.isSuccess = false;
                 }else{
                     result.Message = "Record found.";
-                    result.Data = record.length;
+                    result.Data = record;
                     result.isSuccess = true;
                 }
             }
             res.json(result);
         })
 
-     } //else if(req.body.type == "emplate"){
+    }
+     //else if(req.body.type == "emplate"){
     //       var date = new Date();
     //       date = date.toISOString().split("T")[0];
     //       var empAttendancedata = await attendeanceSchema.find({Date:date,Status:"in"}).populate({
