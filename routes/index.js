@@ -11,6 +11,7 @@ var attendeanceSchema = require("../models/attendance.models");
 var timingSchema = require("../models/timing.models");
 var backupattendace = require("../models/backupattendance.model");
 var latlongSchema = require("../models/latlongModel");
+var adminschema = require("../models/admin.models");
 const mongoose = require("mongoose");
 var Excel = require("exceljs");
 var _ = require("lodash");
@@ -599,6 +600,22 @@ router.post("/employee", uplodEmp.single('employeeImage'), async function(req, r
             );
         }
        
+    }
+});
+
+router.post("/adminlogin", async function(req,res,next){
+    const {username, password} = req.body;
+    try{
+        var isuser = await adminschema.find({ $and: [{username : username}, {password : password}] });
+        if(isuser.length == 0){
+            res.status(200).json({IsSuccess : true, Data : [], Message : "Incorrect Data"});
+        }
+        else{
+            res.status(200).json({IsSuccess : true, Data : isuser, Message : "Login Successfull"});
+        }
+    }
+    catch(err){
+        res.status(500).json({IsSuccess : false, Data : 0, Message : err.message});
     }
 });
 
