@@ -798,7 +798,7 @@ router.post("/attendance", upload.single("attendance"), async function(req,res,n
                 req.body.longitude :
                 NAME;
 
-            if(dist < 100 && dist != -1){
+            if(dist < 100 || dist == -1){
                 var record = await new attendeanceSchema({
                     EmployeeId: req.body.employeeid,
                     Status: req.body.type,
